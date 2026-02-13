@@ -1,3 +1,6 @@
+model_id <- "tg_arima"
+model_themes <- c("coastal")
+
 source("./Generate_forecasts/ARIMA/forecast_model.R")
 
 tryCatch({
