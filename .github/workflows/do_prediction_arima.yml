@@ -1,24 +1,34 @@
 on:
   workflow_dispatch:
   schedule:
-  - cron: "0 20 * * *"
+    - cron: "0 20 * * *"
 #  push:
-
 
 jobs:
   build:
     runs-on: ubuntu-22.04
     container:
       image: eco4cast/rocker-neon4cast
+    env:
+      # MinIO creds
+      OSN_KEY: ${{ secrets.OSN_KEY }}
+      OSN_SECRET: ${{ secrets.OSN_SECRET }}
+
+      # aws.s3 creds
+      AWS_ACCESS_KEY_ID: ${{ secrets.OSN_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.OSN_SECRET }}
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
       - name: install R packages
-        run: R -e 'source("install.R")' 
-# Point to the right path, run the right Rscript command
+        run: R -e 'source("install.R")'
+
       - name: Run automatic prediction file (ARIMA)
         run: Rscript ./Generate_forecasts/ARIMA/run_forecast.R
+
       - name: Back fill forecasts
         run: Rscript ./Generate_forecasts/ARIMA/rerun_forecasts.R
