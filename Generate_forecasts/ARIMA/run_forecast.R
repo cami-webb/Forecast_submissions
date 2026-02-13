@@ -5,5 +5,5 @@ tryCatch({
                        forecast_model = forecast_model,
                        model_themes = model_themes,
                        model_id = model_id,
-                       noaa = F)
+                       noaa = FALSE)
 }, error=function(e){cat("ERROR with forecast generation:\n",conditionMessage(e), "\n")})
