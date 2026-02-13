@@ -41,7 +41,7 @@ forecast_model <- function(site,
     return(NULL)
   }
 
-  # Optional: seasonal ARIMA (uncomment if desired)
+  # Seasonal ARIMA (uncomment if doing seasonal)
   # y_ts <- ts(y, frequency = 365)
 
   if (sum(y < 0, na.rm = TRUE) > 0) {
