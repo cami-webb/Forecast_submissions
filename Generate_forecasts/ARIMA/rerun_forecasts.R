@@ -13,5 +13,6 @@ rerun_forecasts(
   model_themes = model_themes,
   END = END,
   noaa = FALSE,
-  all_sites = FALSE
+  all_sites = FALSE,
+  source_modes = c("buoy", "modis")
 )
