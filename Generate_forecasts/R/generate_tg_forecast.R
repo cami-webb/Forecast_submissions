@@ -100,7 +100,8 @@ generate_tg_forecast <- function(forecast_date,
         horiz = horiz,
         step = step,
         theme = theme,
-        forecast_date = forecast_date
+        forecast_date = forecast_date,
+        model_id = model_id
       )
 
       if (is.null(forecast) || nrow(forecast) == 0) {
