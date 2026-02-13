@@ -1,3 +1,5 @@
+model_id <- "tg_arima"
+
 forecast_model <- function(site,
                            noaa_past_mean,
                            noaa_future_daily,
@@ -71,7 +73,7 @@ forecast_model <- function(site,
     variable = target_variable,
     mu = as.numeric(fc$`Point Forecast`),
     sigma = as.numeric(fc$sigma),
-    model_id = "tg_arima"
+    model_id = model_id
   ) |>
     tidyr::pivot_longer(c(mu, sigma), names_to = "parameter", values_to = "prediction") |>
     dplyr::select(model_id, datetime, reference_datetime, site_id, family, parameter, variable, prediction)
