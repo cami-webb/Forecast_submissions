@@ -8,10 +8,11 @@ run_all_vars = function(var,
                         horiz,
                         step,
                         theme,
-                        forecast_date) {
+                        forecast_date,
+                        model_id) {
   
   message(paste0("Running variable: ", var))
-  forecast <- map_dfr(sites,
+  purrr::map_dfr(sites,
                       forecast_model,
                       noaa_past_mean = noaa_past_mean,
                       noaa_future_daily = noaa_future_daily,
@@ -20,6 +21,7 @@ run_all_vars = function(var,
                       horiz = horiz,
                       step = step,
                       theme = theme,
-                      forecast_date = forecast_date)
-  
+                      forecast_date = forecast_date,
+                      model_id = model_id
+                     )  
 }
