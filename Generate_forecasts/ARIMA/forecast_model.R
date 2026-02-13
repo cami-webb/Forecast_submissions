@@ -6,7 +6,8 @@ forecast_model <- function(site,
                            horiz,
                            step,
                            theme,
-                           forecast_date) {
+                           forecast_date,
+                           model_id) {
 
   message("Running site: ", site)
 
@@ -70,7 +71,7 @@ forecast_model <- function(site,
     variable = target_variable,
     mu = as.numeric(fc$`Point Forecast`),
     sigma = as.numeric(fc$sigma),
-    model_id = model_id
+    model_id = "tg_arima"
   ) |>
     tidyr::pivot_longer(c(mu, sigma), names_to = "parameter", values_to = "prediction") |>
     dplyr::select(model_id, datetime, reference_datetime, site_id, family, parameter, variable, prediction)
