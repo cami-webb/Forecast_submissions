@@ -1,5 +1,3 @@
-model_id <- "tg_arima"
-
 forecast_model <- function(site,
                            noaa_past_mean,
                            noaa_future_daily,
