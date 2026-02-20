@@ -6,7 +6,7 @@ generate_tg_forecast <- function(forecast_date,
                                  noaa = FALSE,
                                  vars_manual = NULL,
                                  target_path = NULL,
-                                 source_mode = c("buoy", "modis")) {
+                                 source_mode = c("buoy", "modis", "cci")) {
 
   forecast_date <- as.Date(forecast_date)
   source_mode <- match.arg(source_mode, several.ok = TRUE)
@@ -67,8 +67,9 @@ generate_tg_forecast <- function(forecast_date,
   step <- 1
 
   # Identify buoy vs modis site_ids
-  buoy_sites  <- unique(target$site_id[grepl("^UNH_buoy_", target$site_id)])
-  modis_sites <- unique(target$site_id[grepl("^MODIS_", target$site_id)])
+  buoy_sites  <- unique(target$site_id[target$site_id == "UNH_buoy"])
+  modis_sites <- unique(target$site_id[target$site_id == "MODIS"])
+  cci_sites   <- unique(target$site_id[target$site_id == "CCI"])
 
   # Loop over themes
   for (theme in model_themes) {
@@ -77,12 +78,14 @@ generate_tg_forecast <- function(forecast_date,
     for (mode in source_mode) {
 
       if (mode == "buoy") {
-        sites <- buoy_sites
-      } else if (mode == "modis") {
-        sites <- modis_sites
-      } else {
-        stop("Unknown source_mode: ", mode)
-      }
+          sites <- buoy_sites
+        } else if (mode == "modis") {
+          sites <- modis_sites
+        } else if (mode == "cci") {
+          sites <- cci_sites
+        } else {
+          stop("Unknown source_mode: ", mode)
+        }
 
       if (length(sites) == 0) {
         message("No sites found for theme=", theme, " mode=", mode, "; skipping.")
