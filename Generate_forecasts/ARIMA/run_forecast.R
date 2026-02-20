@@ -2,6 +2,7 @@ model_id <- "tg_arima"
 model_themes <- c("coastal")
 
 source("./Generate_forecasts/ARIMA/forecast_model.R")
+source("Generate_forecasts/R/generate_tg_forecast.R")
 
 tryCatch({
   generate_tg_forecast(forecast_date = Sys.Date(),
