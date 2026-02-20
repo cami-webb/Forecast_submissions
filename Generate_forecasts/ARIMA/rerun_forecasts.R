@@ -1,7 +1,7 @@
 source("./Generate_forecasts/ARIMA/forecast_model.R")
 source("./Generate_forecasts/R/rerun_forecasts.R")
 
-END <- as_date("2023-11-13") # Re-run if forecasts have not been re-run after Nov 13, fixing calibration issue
+END <- lubridate::as_date("2023-11-13") # Re-run if forecasts have not been re-run after Nov 13, fixing calibration issue
 
 # Optional knobs for different themes (coastal/urban/etc)
 # Leave NULL to use defaults inside generate_tg_forecast()
