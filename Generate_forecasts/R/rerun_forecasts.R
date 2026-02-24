@@ -23,8 +23,9 @@ rerun_forecasts <- function(model_id,
 #    region = "us-east-1",
 #    max = Inf
 #  )
+  
 ### ADDED
-  # Ensure creds available (same pattern you use elsewhere)
+# Ensure creds available (same pattern you use elsewhere)
 if (Sys.getenv("AWS_ACCESS_KEY_ID") == "" && Sys.getenv("OSN_KEY") != "") {
   Sys.setenv(
     AWS_ACCESS_KEY_ID = Sys.getenv("OSN_KEY"),
@@ -32,25 +33,16 @@ if (Sys.getenv("AWS_ACCESS_KEY_ID") == "" && Sys.getenv("OSN_KEY") != "") {
   )
 }
 
-s3_write <- arrow::s3_bucket(
-  "bu4cast-ci-write",
-  endpoint_override = "https://minio-s3.apps.shift.nerc.mghpcc.org",
-  access_key = Sys.getenv("OSN_KEY"),
-  secret_key = Sys.getenv("OSN_SECRET"),
-  scheme = "https"
+# MinIO usually needs path-style URLs
+Sys.setenv("AWS_S3_FORCE_PATH_STYLE" = "true")
+
+submissions <- aws.s3::get_bucket_df(
+  bucket   = "bu4cast-ci-write",
+  prefix   = "challenges/forecasts/",
+  base_url = "https://minio-s3.apps.shift.nerc.mghpcc.org",
+  max      = Inf
 )
-
-fs <- s3_write$filesystem
-if (is.function(fs)) fs <- fs()
   
-# list all objects under the prefix
-ds <- arrow::open_dataset(s3_write$path("challenges/forecasts/"))
-# depending on Arrow version, one of these works:
-files <- tryCatch(ds$files, error = function(e) NULL)
-if (is.null(files)) files <- ds$.files()
-
-submissions <- tibble::tibble(Key = files)
-    
   # ADDED END
   
   # For each theme, check if file is in bucket
