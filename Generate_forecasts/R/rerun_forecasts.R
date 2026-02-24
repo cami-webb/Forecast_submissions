@@ -41,14 +41,13 @@ s3_write <- arrow::s3_bucket(
 )
 
 fs <- s3_write$filesystem
-
+if (is.function(fs)) fs <- fs()
+  
 # list all objects under the prefix
-info <- fs$GetFileInfo(arrow::FileSelector$create("challenges/forecasts/", recursive = TRUE))
-
-submissions <- tibble(
-  Key = info$path,
-  LastModified = as_datetime(info$mtime, tz = "UTC")  # may be NA depending on build; that's okay
-)
+sel  <- arrow::FileSelector$create("challenges/forecasts/", recursive = TRUE)
+info <- fs$GetFileInfo(sel)
+  
+submissions <- tibble::tibble(Key = info$path)
   
   # ADDED END
   
