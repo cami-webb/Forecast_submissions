@@ -42,14 +42,14 @@ forecast_model <- function(site,
   }
 
   # Seasonal ARIMA (uncomment if doing seasonal)
-  # y_ts <- ts(y, frequency = 365)
+  y_ts <- ts(y, frequency = 365)
 
   if (sum(y < 0, na.rm = TRUE) > 0) {
-    fit <- forecast::auto.arima(y)
-    # fit <- forecast::auto.arima(y_ts) SEASONAL
+    # fit <- forecast::auto.arima(y) NOT SEASONAL
+    fit <- forecast::auto.arima(y_ts) 
   } else {
-    fit <- forecast::auto.arima(y, lambda = "auto")
-    # fit <- forecast::auto.arima(y_ts, lambda = "auto") SEASONAL
+    # fit <- forecast::auto.arima(y, lambda = "auto") NOT SEASONAL
+    fit <- forecast::auto.arima(y_ts, lambda = "auto") 
   }
 
   last_dt <- max(site_target$datetime[is.finite(y)], na.rm = TRUE)
