@@ -1,12 +1,13 @@
+name: ARIMA Workflow
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 20 * * *"
-#  push:
+    - cron: '0 12 * * *'
 
 jobs:
-  build:
-    runs-on: ubuntu-22.04
+  r-job:
+    runs-on: ubuntu-latest
+    
     container:
       image: eco4cast/rocker-neon4cast
     env:
