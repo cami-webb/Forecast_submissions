@@ -33,3 +33,6 @@ jobs:
 
       - name: Back fill forecasts
         run: Rscript ./Generate_forecasts/ARIMA/rerun_forecasts.R
+
+      - name: Health check
+        run: Rscript ./Generate_forecasts/ARIMA/health_check.R
