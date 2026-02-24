@@ -4,4 +4,4 @@ tryCatch(
   error = function(e) message("Health check ping failed: ", e$message)
 )
 
-message("Coastal targets script complete!")
+message("ARIMA forecasts complete! :)")
