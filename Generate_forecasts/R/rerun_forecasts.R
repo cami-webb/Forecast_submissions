@@ -1,7 +1,5 @@
 library(dplyr)
 
-END <- as_date("2006-01-01") 
-
 rerun_forecasts <- function(model_id,
                             forecast_model,
                             model_themes,
@@ -9,9 +7,6 @@ rerun_forecasts <- function(model_id,
                             noaa = FALSE,
                             all_sites = FALSE,
                             source_modes = c("buoy", "modis", "cci")) {
-
-  # Dates of forecasts
-  end_date <- paste(Sys.Date() - days(2), "00:00:00") # yesterday's forecasts might not be processed yet
 
   # Get all the submissions
   if (Sys.getenv("AWS_ACCESS_KEY_ID") == "" && Sys.getenv("OSN_KEY") != "") {
@@ -45,26 +40,23 @@ s3_write <- arrow::s3_bucket(
   scheme = "https"
 )
 
-# List existing forecast files under the prefix
-submissions <- arrow::FileSystemDatasetFactory$create(
-  s3_write$path("challenges/forecasts/")
-)$Finish() %>%
-  dplyr::collect() %>%
-  dplyr::transmute(
-    # arrow listing gives you file paths; standardize to Key-like strings
-    Key = file,
-    # Arrow doesn't provide LastModified consistently; you can treat "exists" as OK
-    LastModified = as_datetime(NA)
-  )
+fs <- s3_write$filesystem
+
+# list all objects under the prefix
+info <- fs$GetFileInfo(arrow::FileSelector$create("challenges/forecasts/", recursive = TRUE))
+
+submissions <- tibble(
+  Key = info$path,
+  LastModified = as_datetime(info$mtime, tz = "UTC")  # may be NA depending on build; that's okay
+)
+  
   # ADDED END
   
   # For each theme, check if file is in bucket
-  this_year <- data.frame(
-    date = as.character(paste0(
-      seq.Date(as_date("2024-01-01"), to = as_date(end_date), by = "day"),
-      " 00:00:00"
-    ))
-  )
+  end_date   <- as_date(Sys.Date() - days(2))
+  start_date <- end_date - days(180)
+
+  this_year <- data.frame(date = seq.Date(start_date, end_date, by = "day"))
 
   model_themes <- as.character(model_themes)
   source_modes <- as.character(source_modes)
@@ -83,15 +75,10 @@ submissions <- arrow::FileSystemDatasetFactory$create(
 
         hit <- dplyr::filter(submissions, stringr::str_detect(Key, forecast_file))
 
-        if (nrow(hit) == 0) {
-          this_year[[colname]][i] <- FALSE
-        } else {
-          modified <- max(as_datetime(hit$LastModified))
-          this_year[[colname]][i] <- (modified >= END)
+        this_year[[colname]][i] <- (nrow(hit) > 0)
         }
       }
     }
-  }
 
   # Figure out which (date, theme) pairs are missing ANY required source_mode file
   check_cols <- unlist(lapply(model_themes, function(th) paste0(th, "__", source_modes)), use.names = FALSE)
