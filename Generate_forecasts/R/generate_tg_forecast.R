@@ -121,7 +121,7 @@ generate_tg_forecast <- function(forecast_date,
           family             = as.character("normal"),
           parameter          = as.character(parameter),
           obs_flag           = 0L,
-          variable           = as.character(paste0("chlorophyll_", mode)),
+          variable           = as.character("chlorophyll"),
           prediction         = as.numeric(prediction)
         ) |>
         # keep ONLY required cols, in required order
