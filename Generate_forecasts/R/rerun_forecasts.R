@@ -113,7 +113,7 @@ submissions <- aws.s3::get_bucket_df(
         model_themes = forecast_themes,
         model_id = model_id,
         all_sites = all_sites,
-        noaa = FALSE,                 # force NOAA off like you want
+        noaa = FALSE,                 # NOAA off
         source_mode = source_modes
       )
     }, error = function(e) {
