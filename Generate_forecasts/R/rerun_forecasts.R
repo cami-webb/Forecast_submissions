@@ -1,4 +1,4 @@
-END <- as_date("2006-01-01") # Re-run if forecasts have not been re-run after Nov 13, fixing calibration issue
+END <- as_date("2006-01-01") 
 
 rerun_forecasts <- function(model_id,
                             forecast_model,
