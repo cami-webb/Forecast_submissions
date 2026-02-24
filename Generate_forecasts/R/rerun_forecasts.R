@@ -16,16 +16,7 @@ rerun_forecasts <- function(model_id,
     )
   }
 
-#  submissions <- aws.s3::get_bucket_df(
-#    bucket = "bu4cast-ci-write",
-#    prefix = "challenges/forecasts/", 
-#    base_url = "minio-s3.apps.shift.nerc.mghpcc.org",
-#    region = "us-east-1",
-#    max = Inf
-#  )
-  
-### ADDED
-# Ensure creds available (same pattern you use elsewhere)
+# Ensure creds available 
 if (Sys.getenv("AWS_ACCESS_KEY_ID") == "" && Sys.getenv("OSN_KEY") != "") {
   Sys.setenv(
     AWS_ACCESS_KEY_ID = Sys.getenv("OSN_KEY"),
@@ -33,7 +24,7 @@ if (Sys.getenv("AWS_ACCESS_KEY_ID") == "" && Sys.getenv("OSN_KEY") != "") {
   )
 }
 
-# MinIO usually needs path-style URLs
+# Path-style URLs
 Sys.setenv("AWS_S3_FORCE_PATH_STYLE" = "true")
 
 submissions <- aws.s3::get_bucket_df(
@@ -43,8 +34,6 @@ submissions <- aws.s3::get_bucket_df(
   region   = "",     
   max      = Inf
 )
-  
-  # ADDED END
   
   # For each theme, check if file is in bucket
   end_date   <- as_date(Sys.Date() - days(2))
