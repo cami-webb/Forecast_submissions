@@ -44,11 +44,13 @@ fs <- s3_write$filesystem
 if (is.function(fs)) fs <- fs()
   
 # list all objects under the prefix
-sel  <- arrow::FileSelector$create("challenges/forecasts/", recursive = TRUE)
-info <- fs$GetFileInfo(sel)
-  
-submissions <- tibble::tibble(Key = info$path)
-  
+ds <- arrow::open_dataset(s3_write$path("challenges/forecasts/"))
+# depending on Arrow version, one of these works:
+files <- tryCatch(ds$files, error = function(e) NULL)
+if (is.null(files)) files <- ds$.files()
+
+submissions <- tibble::tibble(Key = files)
+    
   # ADDED END
   
   # For each theme, check if file is in bucket
@@ -72,7 +74,7 @@ submissions <- tibble::tibble(Key = info$path)
         # Must match generate_tg_forecast() naming
         forecast_file <- paste0(theme, "-", sm, "-", as_date(this_year$date[i]), "-", model_id, ".csv.gz")
 
-        hit <- dplyr::filter(submissions, stringr::str_detect(Key, forecast_file))
+        hit <- dplyr::filter(submissions, stringr::str_detect(Key, stringr::fixed(forecast_file)))
 
         this_year[[colname]][i] <- (nrow(hit) > 0)
         }
