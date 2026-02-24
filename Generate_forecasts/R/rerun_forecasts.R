@@ -54,7 +54,7 @@ submissions <- aws.s3::get_bucket_df(
       for (i in seq_len(nrow(this_year))) {
 
         # Must match generate_tg_forecast() naming
-        forecast_file <- paste0(theme, "-", sm, "-", as_date(this_year$date[i]), "-", model_id, ".csv.gz")
+        forecast_file <- paste0(theme, "-", sm, "-", as_date(this_year$date[i]), "-", model_id, ".csv")
 
         hit <- dplyr::filter(submissions, stringr::str_detect(Key, stringr::fixed(forecast_file)))
 
