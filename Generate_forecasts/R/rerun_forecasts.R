@@ -1,4 +1,4 @@
-END <- as_date("2023-11-13") # Re-run if forecasts have not been re-run after Nov 13, fixing calibration issue
+END <- as_date("2006-01-01") # Re-run if forecasts have not been re-run after Nov 13, fixing calibration issue
 
 rerun_forecasts <- function(model_id,
                             forecast_model,
@@ -6,7 +6,7 @@ rerun_forecasts <- function(model_id,
                             END,
                             noaa = FALSE,
                             all_sites = FALSE,
-                            source_modes = c("buoy", "modis")) {
+                            source_modes = c("buoy", "modis", "cci")) {
 
   # Dates of forecasts
   end_date <- paste(Sys.Date() - days(2), "00:00:00") # yesterday's forecasts might not be processed yet
@@ -19,14 +19,43 @@ rerun_forecasts <- function(model_id,
     )
   }
 
-  submissions <- aws.s3::get_bucket_df(
-    bucket = "bu4cast-ci-write",
-    prefix = "challenges/forecasts/", 
-    base_url = "minio-s3.apps.shift.nerc.mghpcc.org",
-    region = "us-east-1",
-    max = Inf
+#  submissions <- aws.s3::get_bucket_df(
+#    bucket = "bu4cast-ci-write",
+#    prefix = "challenges/forecasts/", 
+#    base_url = "minio-s3.apps.shift.nerc.mghpcc.org",
+#    region = "us-east-1",
+#    max = Inf
+#  )
+### ADDED
+  # Ensure creds available (same pattern you use elsewhere)
+if (Sys.getenv("AWS_ACCESS_KEY_ID") == "" && Sys.getenv("OSN_KEY") != "") {
+  Sys.setenv(
+    AWS_ACCESS_KEY_ID = Sys.getenv("OSN_KEY"),
+    AWS_SECRET_ACCESS_KEY = Sys.getenv("OSN_SECRET")
   )
+}
 
+s3_write <- arrow::s3_bucket(
+  "bu4cast-ci-write",
+  endpoint_override = "https://minio-s3.apps.shift.nerc.mghpcc.org",
+  access_key = Sys.getenv("OSN_KEY"),
+  secret_key = Sys.getenv("OSN_SECRET"),
+  scheme = "https"
+)
+
+# List existing forecast files under the prefix
+submissions <- arrow::FileSystemDatasetFactory$create(
+  s3_write$path("challenges/forecasts/")
+)$Finish() %>%
+  dplyr::collect() %>%
+  dplyr::transmute(
+    # arrow listing gives you file paths; standardize to Key-like strings
+    Key = file,
+    # Arrow doesn't provide LastModified consistently; you can treat "exists" as OK
+    LastModified = as_datetime(NA)
+  )
+  # ADDED END
+  
   # For each theme, check if file is in bucket
   this_year <- data.frame(
     date = as.character(paste0(
