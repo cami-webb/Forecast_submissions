@@ -112,10 +112,28 @@ generate_tg_forecast <- function(forecast_date,
         next
       }
 
-      forecast <- forecast |>
+            # Add required columns + rename variable to chlorophyll_<DATA>
+      forecast_out <- forecast |>
         dplyr::mutate(
-          duration = "P1D",
-          project_id = "bu4cast"
+          reference_datetime = as.Date(reference_datetime),  # already is, but keep explicit
+          datetime           = as.Date(datetime),
+          depth              = 1,
+          family             = as.character("normal"),
+          parameter          = as.character(parameter),
+          obs_flag           = 0L,
+          variable           = as.character(paste0("chlorophyll_", mode)),
+          prediction         = as.numeric(prediction)
+        ) |>
+        # keep ONLY required cols, in required order
+        dplyr::select(
+          reference_datetime,
+          datetime,
+          depth,
+          family,
+          parameter,
+          obs_flag,
+          variable,
+          prediction
         )
 
       # Write to bucket
@@ -123,10 +141,8 @@ generate_tg_forecast <- function(forecast_date,
         "challenges/forecasts/project_id=bu4cast/",
         theme, "-", mode, "-", forecast_date, "-", model_id, ".csv"
       )
-
-      # write_csv_arrow handles compression by filename extension
-      arrow::write_csv_arrow(forecast, sink = s3_write$path(forecast_key))
-
+      
+      arrow::write_csv_arrow(forecast_out, sink = s3_write$path(forecast_key))
       message("Wrote forecast to S3: ", forecast_key)
     }
   }
