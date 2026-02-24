@@ -3,6 +3,8 @@ library(lubridate)
 source("./Generate_forecasts/ARIMA/forecast_model.R")
 source("./Generate_forecasts/R/generate_tg_forecast.R")
 source("./Generate_forecasts/R/rerun_forecasts.R")
+source("./Generate_forecasts/R/run_all_vars.R")
+
 
 # Optional knobs for different themes (coastal/urban/etc)
 # Leave NULL to use defaults inside generate_tg_forecast()
