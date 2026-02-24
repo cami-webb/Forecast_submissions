@@ -121,7 +121,7 @@ generate_tg_forecast <- function(forecast_date,
       # Write to bucket
       forecast_key <- paste0(
         "challenges/forecasts/project_id=bu4cast/",
-        theme, "-", mode, "-", forecast_date, "-", model_id, ".csv.gz"
+        theme, "-", mode, "-", forecast_date, "-", model_id, ".csv"
       )
 
       # write_csv_arrow handles compression by filename extension
