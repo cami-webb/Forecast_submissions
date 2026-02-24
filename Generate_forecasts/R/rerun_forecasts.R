@@ -39,7 +39,8 @@ Sys.setenv("AWS_S3_FORCE_PATH_STYLE" = "true")
 submissions <- aws.s3::get_bucket_df(
   bucket   = "bu4cast-ci-write",
   prefix   = "challenges/forecasts/",
-  base_url = "https://minio-s3.apps.shift.nerc.mghpcc.org",
+  base_url = "minio-s3.apps.shift.nerc.mghpcc.org",
+  region   = "",     
   max      = Inf
 )
   
