@@ -78,13 +78,26 @@ submissions <- aws.s3::get_bucket_df(
         # Must match generate_tg_forecast() naming
       vars_needed <- theme_vars(theme)
 
-        # For each variable, we expect one file (because your writer makes 1 file per variable via var_tag)
-        # We'll mark true only if ALL required var files exist for this (theme, sm, date)
-        expected_files <- paste0(
-          theme, "-", sm,
-          "-", var_slug(vars_needed),
-          "-", as_date(this_year$date[i]), "-", model_id, ".csv"
-        )
+        # For each variable, one file 
+        date_str <- as_date(this_year$date[i])
+
+        if (identical(theme, "coastal")) {
+        
+          # one file per mode (buoy/modis/cci)
+          expected_files <- paste0(
+            theme, "-", date_str, "-", sm, ".csv"
+          )
+        
+        } else if (identical(theme, "urban")) {
+        
+          # one file per variable
+          expected_files <- paste0(
+            theme, "-", date_str, "-", var_slug(vars_needed), ".csv"
+          )
+        
+        } else {
+          stop("Unknown theme: ", theme)
+        }
         
         hit_n <- sum(vapply(expected_files, function(ff) {
           nrow(dplyr::filter(submissions, stringr::str_detect(Key, stringr::fixed(ff)))) > 0
