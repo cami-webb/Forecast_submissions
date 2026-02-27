@@ -19,6 +19,9 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.OSN_KEY }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.OSN_SECRET }}
 
+      MODEL_ID: tg_arima
+      MODEL_THEMES: coastal,urban
+      
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
