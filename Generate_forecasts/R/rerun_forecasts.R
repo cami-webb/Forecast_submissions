@@ -82,7 +82,7 @@ submissions <- aws.s3::get_bucket_df(
         # We'll mark true only if ALL required var files exist for this (theme, sm, date)
         expected_files <- paste0(
           theme, "-", sm,
-          "-var=", var_slug(vars_needed),
+          "-", var_slug(vars_needed),
           "-", as_date(this_year$date[i]), "-", model_id, ".csv"
         )
         
