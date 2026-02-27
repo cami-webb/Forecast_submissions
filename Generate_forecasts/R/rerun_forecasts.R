@@ -44,6 +44,28 @@ submissions <- aws.s3::get_bucket_df(
   model_themes <- as.character(model_themes)
   source_modes <- as.character(source_modes)
 
+    var_slug <- function(x) {
+    x |>
+      tolower() |>
+      gsub("[^a-z0-9]+", "_", x = _) |>
+      gsub("^_|_$", "", x = _)
+  }
+
+  theme_vars <- function(theme) {
+  if (identical(theme, "coastal")) return("chlorophyll")
+  if (identical(theme, "urban")) {
+    return(c(
+      "NO2 - Hourly",
+      "O3",
+      "PM2.5 - Daily",
+      "PM10 - Daily",
+      "PM2.5 - Hourly",
+      "PM10 - Hourly"
+    ))
+  }
+  stop("Unknown theme: ", theme)
+}
+  
   # For each theme + source_mode, check existence in bucket
   for (theme in model_themes) {
     for (sm in source_modes) {
@@ -54,11 +76,21 @@ submissions <- aws.s3::get_bucket_df(
       for (i in seq_len(nrow(this_year))) {
 
         # Must match generate_tg_forecast() naming
-        forecast_file <- paste0(theme, "-", sm, "-", as_date(this_year$date[i]), "-", model_id, ".csv")
+      vars_needed <- theme_vars(theme)
 
-        hit <- dplyr::filter(submissions, stringr::str_detect(Key, stringr::fixed(forecast_file)))
-
-        this_year[[colname]][i] <- (nrow(hit) > 0)
+        # For each variable, we expect one file (because your writer makes 1 file per variable via var_tag)
+        # We'll mark true only if ALL required var files exist for this (theme, sm, date)
+        expected_files <- paste0(
+          theme, "-", sm,
+          "-var=", var_slug(vars_needed),
+          "-", as_date(this_year$date[i]), "-", model_id, ".csv"
+        )
+        
+        hit_n <- sum(vapply(expected_files, function(ff) {
+          nrow(dplyr::filter(submissions, stringr::str_detect(Key, stringr::fixed(ff)))) > 0
+        }, logical(1)))
+        
+        this_year[[colname]][i] <- (hit_n == length(expected_files))
         }
       }
     }
