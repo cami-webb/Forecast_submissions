@@ -190,9 +190,7 @@ generate_tg_forecast <- function(forecast_date,
         )
 
       # Write to bucket
-        vars_in_file <- unique(forecast_out$variable)
-        var_tag <- if (length(vars_in_file) == 1) paste0("-var=", var_slug(vars_in_file)) else "-var=multi"
-        
+
         if (identical(theme, "coastal")) {
 
             forecast_key <- paste0(
@@ -206,7 +204,7 @@ generate_tg_forecast <- function(forecast_date,
           
             forecast_key <- paste0(
               "challenges/forecasts/project_id=bu4cast/",
-              theme, "-", forecast_date, "-", var_slug(vars_in_file), ".csv"
+              theme, "-", forecast_date, ".csv"
             )
           
           } else {
