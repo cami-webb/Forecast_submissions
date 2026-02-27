@@ -92,7 +92,7 @@ submissions <- aws.s3::get_bucket_df(
         
           # one file per variable
           expected_files <- paste0(
-            theme, "-", date_str, "-", var_slug(vars_needed), ".csv"
+            theme, "-", date_str, ".csv"
           )
         
         } else {
