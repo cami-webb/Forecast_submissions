@@ -12,7 +12,7 @@ forecast_model <- function(site,
   message("Running site: ", site)
 
   site_target <- target |>
-    dplyr::select(datetime, site_id, variable, observation) |>
+  dplyr::select(dplyr::any_of(c("datetime", "site_id", "variable", "duration", "observation"))) |>
     dplyr::filter(
       site_id == site,
       variable == target_variable,
@@ -29,10 +29,29 @@ forecast_model <- function(site,
     return(NULL)
   }
 
-  # Fill missing dates to daily grid
-  site_target <- site_target |>
-    tidyr::complete(datetime = seq.Date(min(datetime), max(datetime), by = "day")) |>
-    dplyr::arrange(datetime)
+      # Determine duration/timestep for this variable at this site
+    dur <- site_target$duration
+    dur <- dur[!is.na(dur) & nzchar(dur)]
+    dur <- if (length(dur) == 0) NA_character_ else dur[1]
+    
+    is_hourly <- identical(dur, "PT1H")
+    
+    # Build a regular time grid
+    if (is_hourly) {
+      # Expect datetime to already represent an hourly timestamp.
+      # If your targets only store dates (not datetimes), hourly won’t be possible without changing targets.
+      site_target <- site_target |>
+        dplyr::mutate(datetime = as.POSIXct(datetime, tz = "UTC")) |>
+        dplyr::filter(!is.na(datetime)) |>
+        tidyr::complete(datetime = seq.POSIXt(min(datetime), max(datetime), by = "hour")) |>
+        dplyr::arrange(datetime)
+    } else {
+      site_target <- site_target |>
+        dplyr::mutate(datetime = as.Date(datetime)) |>
+        dplyr::filter(!is.na(datetime)) |>
+        tidyr::complete(datetime = seq.Date(min(datetime), max(datetime), by = "day")) |>
+        dplyr::arrange(datetime)
+    }
 
   y <- as.numeric(site_target$observation)
 
@@ -42,8 +61,9 @@ forecast_model <- function(site,
   }
 
   # Seasonal ARIMA (uncomment if doing seasonal)
-  y_ts <- ts(y, frequency = 365)
-
+    freq <- if (is_hourly) 24 else 365
+    y_ts <- ts(y, frequency = freq)
+  
   if (sum(y < 0, na.rm = TRUE) > 0) {
     # fit <- forecast::auto.arima(y) NOT SEASONAL
     fit <- forecast::auto.arima(y_ts) 
@@ -53,8 +73,15 @@ forecast_model <- function(site,
   }
 
   last_dt <- max(site_target$datetime[is.finite(y)], na.rm = TRUE)
-  h <- as.integer(as.Date(forecast_date) - last_dt + horiz)
 
+    if (is_hourly) {
+      # forecast_date is a Date; anchor it at midnight UTC for hourly
+      ref_dt <- as.POSIXct(as.Date(forecast_date), tz = "UTC")
+      h <- as.integer(difftime(ref_dt, last_dt, units = "hours")) + horiz
+    } else {
+      h <- as.integer(as.Date(forecast_date) - as.Date(last_dt)) + horiz
+    }
+  
   if (!is.finite(h) || h <= 0) {
     message("Computed forecast horizon <= 0 for site ", site, "; skipping.")
     return(NULL)
@@ -63,8 +90,12 @@ forecast_model <- function(site,
   fc <- as.data.frame(forecast::forecast(fit, h = h, level = 0.68)) |>
     dplyr::mutate(sigma = `Hi 68` - `Point Forecast`)
 
-  tibble::tibble(
-    datetime = seq.Date(from = last_dt + 1, by = "day", length.out = h),
+    tibble::tibble(
+    datetime = if (is_hourly) {
+      seq.POSIXt(from = last_dt + 3600, by = "hour", length.out = h)
+    } else {
+      seq.Date(from = as.Date(last_dt) + 1, by = "day", length.out = h)
+    },
     reference_datetime = as.Date(forecast_date),
     site_id = site,
     family = "normal",
