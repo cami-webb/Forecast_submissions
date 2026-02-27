@@ -49,8 +49,14 @@ generate_tg_forecast <- function(forecast_date,
   target_raw <- arrow::read_csv_arrow(s3_read$path(target_path))
 
   target <- target_raw |>
-    dplyr::mutate(datetime = lubridate::as_date(substr(datetime, 1, 10))) |>
-    dplyr::select(dplyr::any_of(c("datetime", "site_id", "variable", "duration", "observation")))
+  dplyr::mutate(
+    datetime = lubridate::ymd_hms(datetime, tz = "UTC", quiet = TRUE),
+    datetime = dplyr::if_else(is.na(datetime),
+                              as.POSIXct(lubridate::ymd(datetime), tz = "UTC"),
+                              datetime)
+  ) |>
+  dplyr::select(dplyr::any_of(c("datetime", "site_id", "variable", "duration", "observation")))
+  
   
   if (!"duration" %in% names(target)) target$duration <- NA_character_
 
@@ -163,7 +169,7 @@ generate_tg_forecast <- function(forecast_date,
       forecast_out <- forecast |>
         dplyr::mutate(
           reference_datetime = as.Date(reference_datetime),  # already is, but keep explicit
-          datetime           = as.Date(datetime),
+          datetime           = datetime,
           depth              = 1,
           family             = as.character("normal"),
           parameter          = as.character(parameter),
@@ -187,10 +193,25 @@ generate_tg_forecast <- function(forecast_date,
         vars_in_file <- unique(forecast_out$variable)
         var_tag <- if (length(vars_in_file) == 1) paste0("-var=", var_slug(vars_in_file)) else "-var=multi"
         
-        forecast_key <- paste0(
-          "challenges/forecasts/project_id=bu4cast/",
-          theme, "-", mode, var_tag, "-", forecast_date, "-", model_id, ".csv"
-        )
+        if (identical(theme, "coastal")) {
+
+            forecast_key <- paste0(
+              "challenges/forecasts/project_id=bu4cast/",
+              theme, "-", forecast_date, "-", mode, ".csv"
+            )
+          
+          } else if (identical(theme, "urban")) {
+          
+            vars_in_file <- unique(forecast_out$variable)
+          
+            forecast_key <- paste0(
+              "challenges/forecasts/project_id=bu4cast/",
+              theme, "-", forecast_date, "-", var_slug(vars_in_file), ".csv"
+            )
+          
+          } else {
+            stop("Unknown theme: ", theme)
+          }
       
       arrow::write_csv_arrow(forecast_out, sink = s3_write$path(forecast_key))
       message("Wrote forecast to S3: ", forecast_key)
