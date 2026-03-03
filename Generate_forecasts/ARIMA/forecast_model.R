@@ -25,12 +25,14 @@ forecast_model <- function(site,
     dplyr::arrange(datetime)
 
   if (nrow(site_target) == 0 || all(is.na(site_target$observation))) {
-    message("No target observations at site ", site, " for ", target_variable, "; skipping.")
-    return(NULL)
-  }
-
-      # Determine duration/timestep for this variable at this site
-    dur <- site_target$duration
+      message("No target observations at site ", site, " for ", target_variable, "; skipping.")
+      return(NULL)
+    }
+  
+    # Pull duration from target before summarise drops it
+    dur <- target |>
+      dplyr::filter(site_id == site, variable == target_variable) |>
+      dplyr::pull(duration)
     dur <- dur[!is.na(dur) & nzchar(dur)]
     dur <- if (length(dur) == 0) NA_character_ else dur[1]
     
