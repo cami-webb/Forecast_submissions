@@ -19,7 +19,7 @@ rerun_forecasts <- function(model_id,
 
   submissions <- aws.s3::get_bucket_df(
     bucket   = "bu4cast-ci-write",
-    prefix   = "challenges/forecasts/",
+    prefix   = "challenges/project_id=bu4cast/forecasts/",
     base_url = "minio-s3.apps.shift.nerc.mghpcc.org",
     region   = "",
     max      = Inf
