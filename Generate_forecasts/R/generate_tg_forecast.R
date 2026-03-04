@@ -31,7 +31,7 @@ generate_tg_forecast <- function(forecast_date,
   # Targets path (allow passing in for urban vs coastal)
   if (is.null(target_path)) {
     target_path <- paste0(
-      "challenges/targets/project_id=bu4cast/",
+      "challenges/project_id=bu4cast/targets/",
       model_themes[1],
       "-targets.csv"
     )
@@ -78,12 +78,12 @@ generate_tg_forecast <- function(forecast_date,
 
     if (identical(theme, "urban")) {
       return(c(
-        "NO2_hourly",
+        "NO2_P1H",
         "O3",
-        "PM2.5_daily",
-        "PM10_daily",
-        "PM2.5_hourly",
-        "PM10_hourly"
+        "PM2.5_P1D",
+        "PM10_P1D",
+        "PM2.5_P1H",
+        "PM10_P1H"
       ))
     }
 
@@ -97,10 +97,12 @@ generate_tg_forecast <- function(forecast_date,
     return(list(horiz = 30, step = 1))
   }
 
-  # Identify sites per coastal mode from site_id in target
-  buoy_sites  <- unique(target$site_id[target$site_id == "UNH_buoy"])
-  modis_sites <- unique(target$site_id[target$site_id == "MODIS"])
-  cci_sites   <- unique(target$site_id[target$site_id == "CCI"])
+  # Identify sites per coastal mode from var name in target
+    all_coastal_sites <- unique(target$site_id)
+    
+    buoy_sites  <- unique(target$site_id[target$variable == "chlora_buoy"])
+    modis_sites <- unique(target$site_id[target$variable == "chlora_modis"])
+    cci_sites   <- unique(target$site_id[target$variable == "chlora_cci"])
 
   for (theme in model_themes) {
     vars <- theme_default_vars(theme)
@@ -168,7 +170,7 @@ generate_tg_forecast <- function(forecast_date,
         )
 
       forecast_key <- paste0(
-        "challenges/forecasts/project_id=bu4cast/",
+        "challenges/project_id=bu4cast/forecasts/",
         theme, "-", forecast_date, "-", model_id, ".csv"
       )
 
@@ -221,7 +223,7 @@ generate_tg_forecast <- function(forecast_date,
         )
 
       forecast_key <- paste0(
-        "challenges/forecasts/project_id=bu4cast/",
+        "challenges/project_id=bu4cast/forecasts/",
         theme, "-", forecast_date, "-", model_id, ".csv"
       )
 
