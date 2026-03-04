@@ -9,8 +9,7 @@ generate_tg_forecast <- function(forecast_date,
                                  source_mode = c("buoy", "modis", "cci")) {
 
   forecast_date <- as.Date(forecast_date)
-  source_mode <- match.arg(source_mode, several.ok = TRUE)
-
+ 
   # NOAA drivers (not used for ARIMA; keeping in case I add them later!)
   if (isTRUE(noaa)) {
     load_met(forecast_date)
@@ -100,14 +99,14 @@ generate_tg_forecast <- function(forecast_date,
   # Identify sites per coastal mode from var name in target
     all_coastal_sites <- unique(target$site_id)
     
-    buoy_sites  <- unique(target$site_id[target$variable == "chlora_buoy"])
-    modis_sites <- unique(target$site_id[target$variable == "chlora_modis"])
-    cci_sites   <- unique(target$site_id[target$variable == "chlora_cci"])
-
   for (theme in model_themes) {
     vars <- theme_default_vars(theme)
 
     if (identical(theme, "coastal")) {
+
+      buoy_sites  <- unique(target$site_id[target$variable == "chlora_buoy"])
+      modis_sites <- unique(target$site_id[target$variable == "chlora_modis"])
+      cci_sites   <- unique(target$site_id[target$variable == "chlora_cci"])
 
       # Map each variable to its sites; run all modes, collect into one data frame
       mode_var_sites <- list(
