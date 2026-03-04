@@ -49,10 +49,11 @@ generate_tg_forecast <- function(forecast_date,
 
   target <- target_raw |>
     dplyr::mutate(
-      datetime = lubridate::ymd_hms(datetime, tz = "UTC", quiet = TRUE),
-      datetime = dplyr::if_else(is.na(datetime),
-                                as.POSIXct(lubridate::ymd(datetime), tz = "UTC"),
-                                datetime)
+      datetime = dplyr::case_when(
+        inherits(datetime, "POSIXct") ~ datetime,
+        inherits(datetime, "Date")    ~ as.POSIXct(datetime, tz = "UTC"),
+        TRUE                          ~ as.POSIXct(lubridate::ymd(datetime), tz = "UTC")
+      )
     ) |>
     dplyr::select(dplyr::any_of(c("datetime", "site_id", "variable", "duration", "observation")))
 
