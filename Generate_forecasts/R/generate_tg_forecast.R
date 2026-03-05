@@ -49,11 +49,13 @@ generate_tg_forecast <- function(forecast_date,
 
   target <- target_raw |>
     dplyr::mutate(
-      datetime = dplyr::case_when(
-        inherits(datetime, "POSIXct") ~ datetime,
-        inherits(datetime, "Date")    ~ as.POSIXct(datetime, tz = "UTC"),
-        TRUE                          ~ as.POSIXct(lubridate::ymd(datetime), tz = "UTC")
-      )
+      datetime = if (inherits(datetime[1], "POSIXct")) {
+        datetime
+      } else if (inherits(datetime[1], "Date")) {
+        as.POSIXct(datetime, tz = "UTC")
+      } else {
+        as.POSIXct(lubridate::ymd(datetime), tz = "UTC")
+      }
     ) |>
     dplyr::select(dplyr::any_of(c("datetime", "site_id", "variable", "duration", "observation")))
 
