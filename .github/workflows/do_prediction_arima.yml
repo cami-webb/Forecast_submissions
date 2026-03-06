@@ -14,13 +14,10 @@ jobs:
       # MinIO creds
       OSN_KEY: ${{ secrets.OSN_KEY }}
       OSN_SECRET: ${{ secrets.OSN_SECRET }}
-
+      
       # aws.s3 creds
       AWS_ACCESS_KEY_ID: ${{ secrets.OSN_KEY }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.OSN_SECRET }}
-
-      MODEL_ID: tg_arima
-      MODEL_THEMES: coastal,urban
       
     steps:
       - name: Checkout repo
