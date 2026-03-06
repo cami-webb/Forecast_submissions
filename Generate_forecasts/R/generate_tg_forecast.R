@@ -9,7 +9,8 @@ generate_tg_forecast <- function(forecast_date,
                                  source_mode = c("buoy", "modis", "cci")) {
 
   forecast_date <- as.Date(forecast_date)
- 
+  config <- yaml::read_yaml("Generate_forecasts/ARIMA/arima_config.yaml")
+
   # NOAA drivers (not used for ARIMA; keeping in case I add them later!)
   if (isTRUE(noaa)) {
     load_met(forecast_date)
@@ -24,22 +25,21 @@ generate_tg_forecast <- function(forecast_date,
       dplyr::mutate(datetime = lubridate::as_date(datetime))
   } else {
     noaa_future_daily <- NULL
-    noaa_past_mean <- NULL
+    noaa_past_mean    <- NULL
   }
 
   # Targets path (allow passing in for urban vs coastal)
   if (is.null(target_path)) {
     target_path <- paste0(
-      "challenges/project_id=bu4cast/targets/",
+      config$targets_path, "/",
       model_themes[1],
       "-targets.csv"
     )
   }
 
-  # Read targets bucket
   s3_read <- arrow::s3_bucket(
-    "bu4cast-ci-read",
-    endpoint_override = "https://minio-s3.apps.shift.nerc.mghpcc.org",
+    config$s3_bucket_read,
+    endpoint_override = config$endpoint,
     access_key = Sys.getenv("OSN_KEY"),
     secret_key = Sys.getenv("OSN_SECRET"),
     scheme = "https"
@@ -61,10 +61,9 @@ generate_tg_forecast <- function(forecast_date,
 
   if (!"duration" %in% names(target)) target$duration <- NA_character_
 
-  # Write bucket
   s3_write <- arrow::s3_bucket(
-    "bu4cast-ci-write",
-    endpoint_override = "https://minio-s3.apps.shift.nerc.mghpcc.org",
+    config$s3_bucket_write,
+    endpoint_override = config$endpoint,
     access_key = Sys.getenv("OSN_KEY"),
     secret_key = Sys.getenv("OSN_SECRET"),
     scheme = "https"
@@ -72,36 +71,20 @@ generate_tg_forecast <- function(forecast_date,
 
   theme_default_vars <- function(theme) {
     if (!is.null(vars_manual)) return(vars_manual)
-
-    if (identical(theme, "coastal")) {
-      # variable names match target: chlora_buoy, chlora_modis, chlora_cci
-      return(c("chlora_buoy", "chlora_modis", "chlora_cci"))
-    }
-
-    if (identical(theme, "urban")) {
-      return(c(
-        "NO2_P1H",
-        "O3",
-        "PM2.5_P1D",
-        "PM10_P1D",
-        "PM2.5_P1H",
-        "PM10_P1H"
-      ))
-    }
-
-    stop("Unknown theme: ", theme)
+    vars <- config$theme_vars[[theme]]
+    if (is.null(vars)) stop("Unknown theme: ", theme)
+    return(vars)
   }
 
   duration_settings <- function(duration) {
     duration <- as.character(duration)
-    if (duration == "P1D")  return(list(horiz = 30, step = 1))
-    if (duration == "PT1H") return(list(horiz = 48, step = 1))
-    return(list(horiz = 30, step = 1))
+    if (duration == "P1D")  return(list(horiz = config$horizon_P1D,  step = 1))
+    if (duration == "PT1H") return(list(horiz = config$horizon_PT1H, step = 1))
+    return(list(horiz = config$horizon_P1D, step = 1))
   }
 
-  # Identify sites per coastal mode from var name in target
-    all_coastal_sites <- unique(target$site_id)
-    
+  all_coastal_sites <- unique(target$site_id)
+
   for (theme in model_themes) {
     vars <- theme_default_vars(theme)
 
@@ -111,14 +94,12 @@ generate_tg_forecast <- function(forecast_date,
       modis_sites <- unique(target$site_id[target$variable == "chlora_modis"])
       cci_sites   <- unique(target$site_id[target$variable == "chlora_cci"])
 
-      # Map each variable to its sites; run all modes, collect into one data frame
       mode_var_sites <- list(
         chlora_buoy  = list(sites = buoy_sites,  var = "chlora_buoy"),
         chlora_modis = list(sites = modis_sites, var = "chlora_modis"),
         chlora_cci   = list(sites = cci_sites,   var = "chlora_cci")
       )
 
-      # Filter to only requested source_modes
       mode_var_sites <- mode_var_sites[
         names(mode_var_sites) %in% paste0("chlora_", source_mode)
       ]
@@ -137,17 +118,17 @@ generate_tg_forecast <- function(forecast_date,
         hs  <- duration_settings(dur)
 
         run_all_vars(
-          var              = mv$var,
-          sites            = mv$sites,
-          forecast_model   = forecast_model,
-          noaa_past_mean   = noaa_past_mean,
+          var               = mv$var,
+          sites             = mv$sites,
+          forecast_model    = forecast_model,
+          noaa_past_mean    = noaa_past_mean,
           noaa_future_daily = noaa_future_daily,
-          target           = target,
-          horiz            = hs$horiz,
-          step             = hs$step,
-          theme            = theme,
-          forecast_date    = forecast_date,
-          model_id         = model_id
+          target            = target,
+          horiz             = hs$horiz,
+          step              = hs$step,
+          theme             = theme,
+          forecast_date     = forecast_date,
+          model_id          = model_id
         )
       })
 
@@ -172,7 +153,7 @@ generate_tg_forecast <- function(forecast_date,
         )
 
       forecast_key <- paste0(
-        "challenges/project_id=bu4cast/forecasts/",
+        config$forecasts_path, "/",
         theme, "-", forecast_date, "-", model_id, ".csv"
       )
 
@@ -190,17 +171,17 @@ generate_tg_forecast <- function(forecast_date,
         hs  <- duration_settings(dur)
 
         run_all_vars(
-          var              = v,
-          sites            = unique(target$site_id),
-          forecast_model   = forecast_model,
-          noaa_past_mean   = noaa_past_mean,
+          var               = v,
+          sites             = unique(target$site_id),
+          forecast_model    = forecast_model,
+          noaa_past_mean    = noaa_past_mean,
           noaa_future_daily = noaa_future_daily,
-          target           = target,
-          horiz            = hs$horiz,
-          step             = hs$step,
-          theme            = theme,
-          forecast_date    = forecast_date,
-          model_id         = model_id
+          target            = target,
+          horiz             = hs$horiz,
+          step              = hs$step,
+          theme             = theme,
+          forecast_date     = forecast_date,
+          model_id          = model_id
         )
       })
 
@@ -225,7 +206,7 @@ generate_tg_forecast <- function(forecast_date,
         )
 
       forecast_key <- paste0(
-        "challenges/project_id=bu4cast/forecasts/",
+        config$forecasts_path, "/",
         theme, "-", forecast_date, "-", model_id, ".csv"
       )
 
