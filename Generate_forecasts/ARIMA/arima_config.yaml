@@ -1,0 +1,33 @@
+# Model identity
+model_id: "tg_arima"
+model_themes: ["coastal", "urban"]
+
+# S3 connection
+s3_bucket_read: "bu4cast-ci-read"
+s3_bucket_write: "bu4cast-ci-write"
+endpoint: "https://minio-s3.apps.shift.nerc.mghpcc.org"
+project_id: "bu4cast"
+
+# Paths
+targets_path: "challenges/project_id=bu4cast/targets"
+forecasts_path: "challenges/project_id=bu4cast/forecasts"
+
+# Forecast horizons
+horizon_P1D: 30
+horizon_PT1H: 48
+
+# Theme variables
+theme_vars:
+  coastal: ["chlora_buoy", "chlora_modis", "chlora_cci"]
+  urban: ["NO2_P1H", "O3", "PM2.5_P1D", "PM10_P1D", "PM2.5_P1H", "PM10_P1H"]
+
+# Source modes for each theme
+source_modes:
+  coastal: ["buoy", "modis", "cci"]
+  urban: ["urban"]
+
+# Backfill window
+backfill_days: 180
+
+# Health check
+health_check_url: "https://hc-ping.com/1088c2cf-3fb1-43da-9ff5-d2574bdac32b"

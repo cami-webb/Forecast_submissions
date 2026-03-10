@@ -1,7 +1,9 @@
+library(yaml)
+config <- yaml::read_yaml("Generate_forecasts/ARIMA/arima_config.yaml")
+
 message("Pinging health check...")
 tryCatch(
-  RCurl::getURL("https://hc-ping.com/1088c2cf-3fb1-43da-9ff5-d2574bdac32b"),
+  RCurl::getURL(config$health_check_url),
   error = function(e) message("Health check ping failed: ", e$message)
 )
-
 message("ARIMA forecasts complete! :)")
