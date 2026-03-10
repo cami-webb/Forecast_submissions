@@ -27,7 +27,7 @@ source_modes:
   urban: ["urban"]
 
 # Backfill window
-backfill_days: 180
+backfill_days: 30
 
 # Health check
 health_check_url: "https://hc-ping.com/1088c2cf-3fb1-43da-9ff5-d2574bdac32b"
