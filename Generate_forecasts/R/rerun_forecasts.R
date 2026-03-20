@@ -7,7 +7,7 @@ rerun_forecasts <- function(model_id,
                             all_sites = FALSE,
                             source_modes = c("buoy", "modis", "cci")) {
 
-  config <- yaml::read_yaml("Generate_forecasts/ARIMA/arima_config.yaml")
+  config <- yaml::read_yaml("Generate_forecasts/config.yaml")
 
   if (Sys.getenv("AWS_ACCESS_KEY_ID") == "" && Sys.getenv("OSN_KEY") != "") {
     Sys.setenv(
