@@ -30,7 +30,8 @@ forecast_model <- function(site,
                            horiz,
                            step,
                            theme,
-                           forecast_date) {
+                           forecast_date,
+                           model_id) {
   
   message(paste0("Running site: ", site))
 
