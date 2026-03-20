@@ -9,7 +9,7 @@ generate_tg_forecast <- function(forecast_date,
                                  source_mode = c("buoy", "modis", "cci")) {
 
   forecast_date <- as.Date(forecast_date)
-  config <- yaml::read_yaml("Generate_forecasts/ARIMA/arima_config.yaml")
+  config <- yaml::read_yaml("Generate_forecasts/config.yaml")
 
   # NOAA drivers (not used for ARIMA; keeping in case I add them later!)
   if (isTRUE(noaa)) {
