@@ -1,5 +1,5 @@
 library(yaml)
-config <- yaml::read_yaml("Generate_forecasts/config.yaml")
+config <- yaml::read_yaml("Generate_forecasts/ARIMA/arima_config.yaml")
 
 message("Pinging health check...")
 tryCatch(
