@@ -5,7 +5,8 @@ rerun_forecasts <- function(model_id,
                             END,
                             noaa = FALSE,
                             all_sites = FALSE,
-                            source_modes = c("buoy", "modis", "cci")) {
+                            source_modes = c("buoy", "modis", "cci"),
+                            nowcast_only = FALSE) {
 
   config <- yaml::read_yaml("Generate_forecasts/config.yaml")
 
@@ -72,14 +73,15 @@ rerun_forecasts <- function(model_id,
     )
     tryCatch({
       generate_tg_forecast(
-        forecast_date  = forecast_date,
-        forecast_model = forecast_model,
-        model_themes   = forecast_themes,
-        model_id       = model_id,
-        all_sites      = all_sites,
-        noaa           = FALSE,
-        source_mode    = source_modes
-      )
+          forecast_date  = forecast_date,
+          forecast_model = forecast_model,
+          model_themes   = forecast_themes,
+          model_id       = model_id,
+          all_sites      = all_sites,
+          noaa           = FALSE,
+          source_mode    = source_modes,
+          nowcast_only   = nowcast_only
+            )
     }, error = function(e) {
       cat("ERROR with forecast generation:\n", conditionMessage(e), "\n")
     })
