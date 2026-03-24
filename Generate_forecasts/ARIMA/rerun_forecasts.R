@@ -13,7 +13,7 @@ target_path <- NULL
 for (th in config$models$tg_arima$model_themes) {
   source_modes_th <- config$source_modes[[th]]
   rerun_forecasts(
-    model_id       = config$model_id,
+    model_id = config$models$tg_arima$model_id,
     forecast_model = forecast_model,
     model_themes   = th,
     END            = END,
