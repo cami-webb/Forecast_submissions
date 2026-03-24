@@ -6,7 +6,8 @@ generate_tg_forecast <- function(forecast_date,
                                  noaa = FALSE,
                                  vars_manual = NULL,
                                  target_path = NULL,
-                                 source_mode = c("buoy", "modis", "cci")) {
+                                 source_mode = c("buoy", "modis", "cci"),
+                                 nowcast_only = FALSE) {
 
   forecast_date <- as.Date(forecast_date)
   config <- yaml::read_yaml("Generate_forecasts/config.yaml")
@@ -77,11 +78,12 @@ generate_tg_forecast <- function(forecast_date,
   }
 
   duration_settings <- function(duration) {
-    duration <- as.character(duration)
-    if (duration == "P1D")  return(list(horiz = config$horizon_P1D,  step = 1))
-    if (duration == "PT1H") return(list(horiz = config$horizon_PT1H, step = 1))
-    return(list(horiz = config$horizon_P1D, step = 1))
-  }
+      if (isTRUE(nowcast_only)) return(list(horiz = 1, step = 1))
+      duration <- as.character(duration)
+      if (duration == "P1D")  return(list(horiz = config$horizon_P1D,  step = 1))
+      if (duration == "PT1H") return(list(horiz = config$horizon_PT1H, step = 1))
+      return(list(horiz = config$horizon_P1D, step = 1))
+    }
 
   all_coastal_sites <- unique(target$site_id)
 
