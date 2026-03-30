@@ -38,3 +38,5 @@ models:
   tg_xgboost:
     model_id: "tg_XGBoost"
     model_themes: ["coastal", "urban"]
+    health_check_url: "https://hc-ping.com/79fe71bb-ce0c-4272-afbd-dfc9ba70fe62"
+
