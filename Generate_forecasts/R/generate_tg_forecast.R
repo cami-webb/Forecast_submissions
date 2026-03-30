@@ -12,6 +12,16 @@ generate_tg_forecast <- function(forecast_date,
   forecast_date <- as.Date(forecast_date)
   config <- yaml::read_yaml("Generate_forecasts/config.yaml")
 
+  s3_read <- arrow::s3_bucket(
+    config$s3_bucket_read,
+    endpoint_override = config$endpoint,
+    access_key = Sys.getenv("OSN_KEY"),
+    secret_key = Sys.getenv("OSN_SECRET"),
+    scheme = "https"
+  )
+
+  target_raw <- arrow::read_csv_arrow(s3_read$path(target_path))
+
   # NOAA drivers (not used for ARIMA; keeping in case I add them later!)
 if (isTRUE(noaa)) {
     source("./Generate_forecasts/R/load_met_gefs.R")
@@ -35,16 +45,6 @@ if (isTRUE(noaa)) {
       "-targets.csv"
     )
   }
-
-  s3_read <- arrow::s3_bucket(
-    config$s3_bucket_read,
-    endpoint_override = config$endpoint,
-    access_key = Sys.getenv("OSN_KEY"),
-    secret_key = Sys.getenv("OSN_SECRET"),
-    scheme = "https"
-  )
-
-  target_raw <- arrow::read_csv_arrow(s3_read$path(target_path))
 
   target <- target_raw |>
     dplyr::mutate(
