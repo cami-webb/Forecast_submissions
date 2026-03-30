@@ -35,4 +35,4 @@ jobs:
         run: Rscript ./Generate_forecasts/ARIMA/rerun_forecasts.R
 
       - name: Health check
-        run: Rscript ./Generate_forecasts/ARIMA/health_check.R
+        run: Rscript -e "config <- yaml::read_yaml('Generate_forecasts/config.yaml'); RCurl::getURL(config\$models\$tg_arima\$health_check_url)"
