@@ -13,17 +13,15 @@ generate_tg_forecast <- function(forecast_date,
   config <- yaml::read_yaml("Generate_forecasts/config.yaml")
 
   # NOAA drivers (not used for ARIMA; keeping in case I add them later!)
-  if (isTRUE(noaa)) {
-    load_met(forecast_date)
-    noaa_future_daily <- read.csv(
-      paste0("./Generate_forecasts/noaa_downloads/noaa_future_daily_", forecast_date, ".csv")
-    ) |>
-      dplyr::mutate(datetime = lubridate::as_date(datetime))
-
-    noaa_past_mean <- read.csv(
-      paste0("./Generate_forecasts/noaa_downloads/noaa_past_mean_", forecast_date, ".csv")
-    ) |>
-      dplyr::mutate(datetime = lubridate::as_date(datetime))
+if (isTRUE(noaa)) {
+    source("./Generate_forecasts/R/load_met_gefs.R")
+    met <- load_met_gefs(
+      sites         = unique(target_raw$site_id),
+      forecast_date = forecast_date,
+      config        = config
+    )
+    noaa_past_mean    <- met$noaa_past_mean
+    noaa_future_daily <- met$noaa_future_daily
   } else {
     noaa_future_daily <- NULL
     noaa_past_mean    <- NULL
