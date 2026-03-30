@@ -34,6 +34,7 @@ models:
   tg_temp_lm:
     model_id: "tg_temp_lm"
     model_themes: ["coastal", "urban"]
+    health_check_url: "https://hc-ping.com/aa786d5b-f664-4eb9-95de-20df2df928ed"
   tg_xgboost:
     model_id: "tg_XGBoost"
     model_themes: ["coastal", "urban"]
