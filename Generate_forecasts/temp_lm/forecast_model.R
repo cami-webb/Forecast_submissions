@@ -7,7 +7,7 @@ library(lubridate)
 library(arrow)
 library(yaml)
 
-source("./Generate_forecasts/R/load_met.R")
+source("./Generate_forecasts/R/load_met_gefs.R")
 source("./Generate_forecasts/R/generate_tg_forecast.R")
 source("./Generate_forecasts/R/run_all_vars.R")
 
