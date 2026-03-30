@@ -1,4 +1,4 @@
-name: ARIMA Workflow
+name: S-ARIMA
 on:
   workflow_dispatch:
   schedule:
