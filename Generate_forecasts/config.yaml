@@ -34,3 +34,6 @@ models:
   tg_temp_lm:
     model_id: "tg_temp_lm"
     model_themes: ["coastal", "urban"]
+  tg_xgboost:
+    model_id: "tg_XGBoost"
+    model_themes: ["coastal", "urban"]
