@@ -15,7 +15,6 @@ for (th in config$models$tg_temp_lm$model_themes) {
     model_id       = config$models$tg_temp_lm$model_id,
     forecast_model = forecast_model,
     model_themes   = th,
-    END            = NULL,
     noaa           = FALSE,
     use_gefs       = TRUE,
     all_sites      = FALSE,
