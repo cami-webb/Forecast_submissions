@@ -10,7 +10,17 @@ generate_tg_forecast <- function(forecast_date,
                                  nowcast_only = FALSE) {
 
   forecast_date <- as.Date(forecast_date)
+  model_themes  <- as.character(model_themes)
   config <- yaml::read_yaml("Generate_forecasts/config.yaml")
+
+  # Targets path (allow passing in for urban vs coastal)
+  if (is.null(target_path)) {
+    target_path <- paste0(
+      config$targets_path, "/",
+      model_themes[1],
+      "-targets.csv"
+    )
+  }
 
   s3_read <- arrow::s3_bucket(
     config$s3_bucket_read,
@@ -21,7 +31,7 @@ generate_tg_forecast <- function(forecast_date,
   )
 
   target_raw <- arrow::read_csv_arrow(s3_read$path(target_path))
-
+  
   # NOAA drivers (not used for ARIMA; keeping in case I add them later!)
 if (isTRUE(noaa)) {
     source("./Generate_forecasts/R/load_met_gefs.R")
