@@ -6,7 +6,7 @@ generate_tg_forecast <- function(forecast_date,
                                  noaa = FALSE,
                                  vars_manual = NULL,
                                  target_path = NULL,
-                                 source_mode = c("buoy", "modis", "cci"),
+                                 source_mode = c("buoy", "cci"),
                                  nowcast_only = FALSE) {
 
   forecast_date <- as.Date(forecast_date)
