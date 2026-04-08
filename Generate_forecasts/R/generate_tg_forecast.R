@@ -101,12 +101,10 @@ if (isTRUE(noaa)) {
     if (identical(theme, "coastal")) {
 
       buoy_sites  <- unique(target$site_id[target$variable == "chlora_buoy"])
-      modis_sites <- unique(target$site_id[target$variable == "chlora_modis"])
       cci_sites   <- unique(target$site_id[target$variable == "chlora_cci"])
 
       mode_var_sites <- list(
         chlora_buoy  = list(sites = buoy_sites,  var = "chlora_buoy"),
-        chlora_modis = list(sites = modis_sites, var = "chlora_modis"),
         chlora_cci   = list(sites = cci_sites,   var = "chlora_cci")
       )
 
@@ -217,7 +215,7 @@ if (isTRUE(noaa)) {
 
       forecast_key <- paste0(
         config$forecasts_path, "/",
-        theme, "-", forecast_date, "-", model_id, ".csv"
+        theme, "-", forecast_date, "-", model_id, "-corrected.csv"
       )
 
       arrow::write_csv_arrow(forecast_out, sink = s3_write$path(forecast_key))
