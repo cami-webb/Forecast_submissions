@@ -14,12 +14,12 @@ horizon_PT1H: 48
 
 # Theme variables
 theme_vars:
-  coastal: ["chlora_buoy", "chlora_modis", "chlora_cci"]
+  coastal: ["chlora_buoy", "chlora_cci"]
   urban: ["NO2_P1H", "O3", "PM2.5_P1D", "PM10_P1D", "PM2.5_P1H", "PM10_P1H"]
 
 # Source modes for each theme
 source_modes:
-  coastal: ["buoy", "modis", "cci"]
+  coastal: ["buoy", "cci"]
   urban: ["urban"]
 
 # Backfill window
