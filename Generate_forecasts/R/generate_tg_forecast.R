@@ -215,7 +215,7 @@ if (isTRUE(noaa)) {
 
       forecast_key <- paste0(
         config$forecasts_path, "/",
-        theme, "-", forecast_date, "-", model_id, "-corrected.csv"
+        theme, "-", forecast_date, "-", model_id, ".csv"
       )
 
       arrow::write_csv_arrow(forecast_out, sink = s3_write$path(forecast_key))
