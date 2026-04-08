@@ -39,7 +39,7 @@ rerun_forecasts <- function(model_id,
     this_year[[colname]] <- FALSE
     for (i in seq_len(nrow(this_year))) {
       date_str       <- lubridate::as_date(this_year$date[i])
-      expected_file  <- paste0(theme, "-", date_str, "-", model_id, "-corrected.csv")
+      expected_file  <- paste0(theme, "-", date_str, "-", model_id, ".csv")
       this_year[[colname]][i] <- nrow(
         dplyr::filter(submissions, stringr::str_detect(Key, stringr::fixed(expected_file)))
       ) > 0
