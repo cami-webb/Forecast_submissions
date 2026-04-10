@@ -124,16 +124,17 @@ if (isTRUE(noaa)) {
     vars <- theme_default_vars(theme)
 
     if (identical(theme, "coastal")) {
-
-      buoy_sites  <- unique(target$site_id[target$variable == "chlora_buoy"])
-      cci_sites   <- unique(target$site_id[target$variable == "chlora_cci"])
-
+      
+      buoy_sites           <- unique(target$site_id[target$variable == "chlora_buoy"])
+      cci_sites            <- unique(target$site_id[target$variable == "chlora_cci"])
+      cci_corrected_sites  <- unique(target$site_id[target$variable == "chlora_cci_corrected"])
+      
       mode_var_sites <- list(
-        chlora_buoy  = list(sites = buoy_sites,  var = "chlora_buoy"),
-        chlora_cci   = list(sites = cci_sites,   var = "chlora_cci"),
+        chlora_buoy          = list(sites = buoy_sites,          var = "chlora_buoy"),
+        chlora_cci           = list(sites = cci_sites,           var = "chlora_cci"),
         chlora_cci_corrected = list(sites = cci_corrected_sites, var = "chlora_cci_corrected")
       )
-
+      
       mode_var_sites <- mode_var_sites[
         names(mode_var_sites) %in% paste0("chlora_", source_mode)
       ]
