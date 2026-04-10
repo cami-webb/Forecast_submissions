@@ -68,7 +68,32 @@ if (isTRUE(noaa)) {
     ) |>
     dplyr::select(dplyr::any_of(c("datetime", "site_id", "variable", "duration", "observation")))
 
-  if (!"duration" %in% names(target)) target$duration <- NA_character_
+    if (!"duration" %in% names(target)) target$duration <- NA_character_
+
+  # Load corrected targets if cci_corrected is in source_mode
+  if ("cci_corrected" %in% source_mode && identical(model_themes[1], "coastal")) {
+    corrected_raw <- tryCatch(
+      arrow::read_csv_arrow(s3_read$path(config$targets_corrected_path)) |>
+        dplyr::filter(variable == "chlora_cci_corrected"),
+      error = function(e) { message("Could not load corrected targets: ", e$message); NULL }
+    )
+    if (!is.null(corrected_raw) && nrow(corrected_raw) > 0) {
+      corrected_target <- corrected_raw |>
+        dplyr::mutate(
+          datetime = if (inherits(datetime[1], "POSIXct")) {
+            datetime
+          } else if (inherits(datetime[1], "Date")) {
+            as.POSIXct(datetime, tz = "UTC")
+          } else {
+            as.POSIXct(lubridate::ymd(datetime), tz = "UTC")
+          }
+        ) |>
+        dplyr::select(dplyr::any_of(c("datetime", "site_id", "variable", "duration", "observation")))
+      if (!"duration" %in% names(corrected_target)) corrected_target$duration <- NA_character_
+      target <- dplyr::bind_rows(target, corrected_target)
+    }
+  }
+
 
   s3_write <- arrow::s3_bucket(
     config$s3_bucket_write,
@@ -105,7 +130,8 @@ if (isTRUE(noaa)) {
 
       mode_var_sites <- list(
         chlora_buoy  = list(sites = buoy_sites,  var = "chlora_buoy"),
-        chlora_cci   = list(sites = cci_sites,   var = "chlora_cci")
+        chlora_cci   = list(sites = cci_sites,   var = "chlora_cci"),
+        chlora_cci_corrected = list(sites = cci_corrected_sites, var = "chlora_cci_corrected")
       )
 
       mode_var_sites <- mode_var_sites[
