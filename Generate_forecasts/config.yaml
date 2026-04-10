@@ -6,6 +6,7 @@ project_id: "bu4cast"
 
 # Paths
 targets_path: "challenges/project_id=bu4cast/targets"
+targets_corrected_path: "challenges/project_id=bu4cast/targets/coastal-targets-corrected.csv"
 forecasts_path: "challenges/project_id=bu4cast/forecasts"
 
 # Forecast horizons
@@ -19,7 +20,7 @@ theme_vars:
 
 # Source modes for each theme
 source_modes:
-  coastal: ["buoy", "cci"]
+  coastal: ["buoy", "cci", "cci_corrected"]
   urban: ["urban"]
 
 # Backfill window
