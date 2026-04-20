@@ -4,6 +4,7 @@ rerun_forecasts <- function(model_id,
                             model_themes,
                             END,
                             noaa = FALSE,
+                            use_gefs = FALSE,
                             all_sites = FALSE,
                             source_modes = c("buoy", "cci"),
                             nowcast_only = FALSE) {
@@ -78,7 +79,7 @@ rerun_forecasts <- function(model_id,
           model_themes   = forecast_themes,
           model_id       = model_id,
           all_sites      = all_sites,
-          noaa           = FALSE,
+          noaa           = use_gefs,
           source_mode    = source_modes,
           nowcast_only   = nowcast_only
             )
