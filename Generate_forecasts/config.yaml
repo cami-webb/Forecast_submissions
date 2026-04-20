@@ -24,7 +24,7 @@ source_modes:
   urban: ["urban"]
 
 # Backfill window
-backfill_days: 120
+backfill_days: 139
 
 # Models
 models:
