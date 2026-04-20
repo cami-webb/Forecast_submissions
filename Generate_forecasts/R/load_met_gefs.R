@@ -27,12 +27,13 @@ load_met_gefs <- function(sites, forecast_date, config) {
   })
   message("Stage3 met loaded.")
   
-  # Stage 2 = future forecast met, keep ensemble members separate
-  # Load all sites in one scan instead of one at a time
-  message("Loading stage2 met data for ", length(sites), " sites...")
+    message("Loading stage2 met data for ", length(sites), " sites...")
   noaa_future_daily <- tryCatch({
     ds <- arrow::open_dataset(s3_read$path(paste0(drivers_path, "/stage2"))) |>
-      dplyr::filter(site_id %in% sites) |>
+      dplyr::filter(
+        site_id %in% sites,
+        as.Date(datetime) >= as.Date(forecast_date)
+      ) |>
       dplyr::collect()
     
     if (nrow(ds) == 0) return(NULL)
@@ -41,10 +42,7 @@ load_met_gefs <- function(sites, forecast_date, config) {
     latest_ref <- max(as.Date(ds$reference_datetime), na.rm = TRUE)
     
     ds |>
-      dplyr::filter(
-        as.Date(reference_datetime) == latest_ref,
-        as.Date(datetime) >= as.Date(forecast_date)
-      ) |>
+      dplyr::filter(as.Date(reference_datetime) == latest_ref) |>
       dplyr::mutate(datetime = as.Date(datetime)) |>
       dplyr::group_by(datetime, site_id, parameter, variable) |>
       dplyr::summarise(prediction = mean(prediction, na.rm = TRUE), .groups = "drop") |>
