@@ -236,7 +236,7 @@ if (isTRUE(noaa)) {
           prediction         = as.numeric(prediction)
         ) |>
         dplyr::select(
-          reference_datetime, datetime, depth, family,
+          reference_datetime, datetime, site_id, depth, family,
           parameter, obs_flag, variable, prediction
         )
 
