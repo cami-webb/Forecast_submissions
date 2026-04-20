@@ -1,4 +1,4 @@
-name: Temperature-based LM
+name: LM
 on:
   workflow_dispatch:
   schedule:
