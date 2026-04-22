@@ -25,4 +25,4 @@ jobs:
       - name: Back fill forecasts
         run: Rscript ./Generate_forecasts/temp_lm/rerun_forecasts.R
       - name: Health check
-        run: Rscript -e "config <- yaml::read_yaml('Generate_forecasts/config.yaml'); RCurl::getURL(config\$models\$tg_temp_lm\$health_check_url)"
+        run: Rscript -e "config <- yaml::read_yaml('Generate_forecasts/config.yaml'); RCurl::getURL(config\$models\$tg_ugrd_lm\$health_check_url)"
