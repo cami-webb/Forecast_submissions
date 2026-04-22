@@ -9,10 +9,10 @@ source("./Generate_forecasts/R/generate_tg_forecast.R")
 source("./Generate_forecasts/R/rerun_forecasts.R")
 source("./Generate_forecasts/R/run_all_vars.R")
 
-for (th in config$models$tg_temp_lm$model_themes) {
+for (th in config$models$tg_ugrd_lm$model_themes) {
   source_modes_th <- config$source_modes[[th]]
   rerun_forecasts(
-    model_id       = config$models$tg_temp_lm$model_id,
+    model_id       = config$models$tg_ugrd_lm$model_id,
     forecast_model = forecast_model,
     model_themes   = th,
     noaa           = FALSE,
