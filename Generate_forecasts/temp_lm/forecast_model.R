@@ -58,20 +58,20 @@ forecast_model <- function(site,
     message(paste0("No target observations at site ", site, ". Skipping forecasts at this site."))
     return()
 
-  } else if (sum(!is.na(site_target$temperature) & !is.na(site_target[target_variable])) == 0) {
+  } else if (sum(!is.na(site_target$conductivity) & !is.na(site_target[target_variable])) == 0) {
     message(paste0("No historical temp data that corresponds with target observations at site ", site, ". Skipping forecasts at this site."))
     return()
 
   } else {
     # Fit linear model based on past data: target = m * wspd + b
-    fit <- lm(get(target_variable) ~ temperature, data = site_target)
+    fit <- lm(get(target_variable) ~ conductivity, data = site_target)
 
     # Get last known wspd value for persistence forecast
     last_wspd <- wspd_data |>
-      dplyr::filter(!is.na(temperature)) |>
+      dplyr::filter(!is.na(conductivity)) |>
       dplyr::arrange(desc(datetime)) |>
       dplyr::slice(1) |>
-      dplyr::pull(temperature)
+      dplyr::pull(conductivity)
 
     if (length(last_wspd) == 0 || is.na(last_wspd)) {
       message(paste0("No recent temp data at site ", site, ". Skipping forecasts at this site."))
