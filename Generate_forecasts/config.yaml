@@ -32,10 +32,10 @@ models:
     model_id: "tg_arima"
     model_themes: ["coastal", "urban"]
     health_check_url: "https://hc-ping.com/1088c2cf-3fb1-43da-9ff5-d2574bdac32b"
-  tg_wspd_lm:
-    model_id: "tg_wspd_lm"
+  tg_wtemp_lm:
+    model_id: "tg_wtemp_lm"
     model_themes: ["coastal"]
-    health_check_url: "https://hc-ping.com/dc329c93-a192-479c-93ed-27ed98f7bce3"
+    health_check_url: "https://hc-ping.com/676128f6-114c-4feb-8c64-54d83d333752"
   tg_xgboost:
     model_id: "tg_XGBoost"
     model_themes: ["coastal", "urban"]
