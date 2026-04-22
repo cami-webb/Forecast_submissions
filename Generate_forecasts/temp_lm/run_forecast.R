@@ -7,14 +7,14 @@ source("./Generate_forecasts/temp_lm/forecast_model.R")
 source("./Generate_forecasts/R/generate_tg_forecast.R")
 source("./Generate_forecasts/R/run_all_vars.R")
 
-for (th in config$models$tg_vgrd_lm$model_themes) {
+for (th in config$models$tg_dlwrf_lm$model_themes) {
   source_modes_th <- config$source_modes[[th]]
   tryCatch({
     generate_tg_forecast(
       forecast_date  = Sys.Date(),
       forecast_model = forecast_model,
       model_themes   = th,
-      model_id       = config$models$tg_vgrd_lm$model_id,
+      model_id       = config$models$tg_dlwrf_lm$model_id,
       all_sites      = FALSE,
       noaa           = TRUE,
       source_mode    = source_modes_th
