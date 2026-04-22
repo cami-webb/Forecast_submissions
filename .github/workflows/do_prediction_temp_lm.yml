@@ -5,7 +5,7 @@ on:
     - cron: "0 20 * * *"
 jobs:
   build:
-    runs-on: ubuntu latest
+    runs-on: ubuntu-latest
     container:
       image: eco4cast/rocker-neon4cast
     env:
