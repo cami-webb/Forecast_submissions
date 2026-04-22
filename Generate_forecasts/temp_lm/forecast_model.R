@@ -40,12 +40,12 @@ forecast_model <- function(site,
     message(paste0("No target observations at site ", site, ". Skipping forecasts at this site."))
     return()
 
-  } else if (sum(!is.na(site_target$northward_wind) & !is.na(site_target[target_variable])) == 0) {
-    message(paste0("No historical northward wind data that corresponds with target observations at site ", site, ". Skipping forecasts at this site."))
+  } else if (sum(!is.na(site_target$surface_downwelling_longwave_flux_in_air) & !is.na(site_target[target_variable])) == 0) {
+    message(paste0("No historical surface downwelling longwave flux data that corresponds with target observations at site ", site, ". Skipping forecasts at this site."))
     
   } else {
     # Fit linear model based on past data: target = m * air temp + b
-    fit <- lm(get(target_variable) ~ northward_wind, data = site_target)
+    fit <- lm(get(target_variable) ~ surface_downwelling_longwave_flux_in_air, data = site_target)
     
     # Get 30-day predicted temp ensemble at the site
     noaa_future <- noaa_future_daily %>%
@@ -54,7 +54,7 @@ forecast_model <- function(site,
     # use the linear model to forecast target variable for each ensemble member
     forecast <- noaa_future |>
       mutate(site_id = site,
-             prediction = predict(fit, tibble(northward_wind)),
+             prediction = predict(fit, tibble(surface_downwelling_longwave_flux_in_air)),
              variable = target_variable)
 
     # Format results to EFI standard
