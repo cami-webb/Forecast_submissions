@@ -90,7 +90,7 @@ forecast_model <- function(site,
       parameter = 1
     ) |>
       dplyr::mutate(
-        prediction = predict(fit, tibble::tibble(wspd = last_wspd)),
+        prediction = predict(fit, tibble::tibble(temperature = last_wspd)),
         variable   = target_variable
       )
 
