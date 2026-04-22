@@ -32,7 +32,7 @@ models:
     model_id: "tg_arima"
     model_themes: ["coastal", "urban"]
     health_check_url: "https://hc-ping.com/1088c2cf-3fb1-43da-9ff5-d2574bdac32b"
-  tg_vgrd_lm:
+  tg_dlwrf_lm:
     model_id: "tg_dlwrf_lm"
     model_themes: ["coastal", "urban"]
     health_check_url: "https://hc-ping.com/7ec80e52-a38a-4ecd-b27f-8d8fb2a74770"
