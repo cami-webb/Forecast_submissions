@@ -1,6 +1,4 @@
-# tg_temp_lm model
-# written by ASL, 21 Jan 2023
-# edited 2023-09-08 to consolidate and set up framework for filling in missed dates
+# tg_wspd_lm model
 
 library(tidyverse)
 library(lubridate)
@@ -10,6 +8,23 @@ library(yaml)
 source("./Generate_forecasts/R/load_met_gefs.R")
 source("./Generate_forecasts/R/generate_tg_forecast.R")
 source("./Generate_forecasts/R/run_all_vars.R")
+
+# Load wspd data from S3 once
+config <- yaml::read_yaml("Generate_forecasts/config.yaml")
+s3_read <- arrow::s3_bucket(
+  config$s3_bucket_read,
+  endpoint_override = config$endpoint,
+  access_key        = Sys.getenv("OSN_KEY"),
+  secret_key        = Sys.getenv("OSN_SECRET"),
+  scheme            = "https"
+)
+wspd_all <- arrow::read_csv_arrow(
+  s3_read$path("challenges/project_id=bu4cast/targets/coastal-raw.csv")
+) |>
+  dplyr::mutate(
+    datetime = as.Date(datetime),
+    site_id  = as.character(site_id)
+  )
 
 #### Define the forecast model for a site
 forecast_model <- function(site,
@@ -23,16 +38,11 @@ forecast_model <- function(site,
                            forecast_date,
                            model_id) {
 
-    message(paste0("Running site: ", site))
+  message(paste0("Running site: ", site))
 
-  # Get wspd from target data
-  wspd_data <- target |>
-    dplyr::select(datetime, site_id, variable, observation) |>
-    dplyr::mutate(site_id = as.character(site_id)) |>
-    dplyr::filter(variable == "wspd",
-                  site_id == site,
-                  datetime < forecast_date) |>
-    tidyr::pivot_wider(names_from = "variable", values_from = "observation")
+  # Get wspd for this site from pre-loaded S3 data
+  wspd_data <- wspd_all |>
+    dplyr::filter(site_id == site, datetime < forecast_date)
 
   # Merge target variable with wspd
   site_target <- target |>
