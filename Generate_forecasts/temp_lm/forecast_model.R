@@ -42,7 +42,7 @@ forecast_model <- function(site,
 
   } else if (sum(!is.na(site_target$eastward_wind) & !is.na(site_target[target_variable])) == 0) {
     message(paste0("No historical eastward wind data that corresponds with target observations at site ", site, ". Skipping forecasts at this site."))
-
+    
   } else {
     # Fit linear model based on past data: target = m * air temp + b
     fit <- lm(get(target_variable) ~ eastward_wind, data = site_target)
