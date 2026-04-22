@@ -16,7 +16,7 @@ for (th in config$models$tg_wspd_lm$model_themes) {
       model_themes   = th,
       model_id       = config$models$tg_wspd_lm$model_id,
       all_sites      = FALSE,
-      noaa           = TRUE,
+      noaa           = FALSE,
       source_mode    = source_modes_th
     )
   }, error = function(e) {
