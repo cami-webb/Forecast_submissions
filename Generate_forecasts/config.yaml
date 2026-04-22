@@ -33,9 +33,9 @@ models:
     model_themes: ["coastal", "urban"]
     health_check_url: "https://hc-ping.com/1088c2cf-3fb1-43da-9ff5-d2574bdac32b"
   tg_vgrd_lm:
-    model_id: "tg_dlwrf_lm"
+    model_id: "tg_dswrf_lm"
     model_themes: ["coastal", "urban"]
-    health_check_url: "https://hc-ping.com/7ec80e52-a38a-4ecd-b27f-8d8fb2a74770"
+    health_check_url: "https://hc-ping.com/2898ff85-7e0c-453b-97cc-7d5da713c7cc"
   tg_xgboost:
     model_id: "tg_XGBoost"
     model_themes: ["coastal", "urban"]
