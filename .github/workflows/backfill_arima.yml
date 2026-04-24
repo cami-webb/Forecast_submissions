@@ -1,0 +1,27 @@
+name: ARIMA Backfill Jul-Nov
+on:
+  workflow_dispatch:
+
+jobs:
+  r-job:
+    runs-on: ubuntu-latest
+    
+    container:
+      image: eco4cast/rocker-neon4cast
+    env:
+      OSN_KEY: ${{ secrets.OSN_KEY }}
+      OSN_SECRET: ${{ secrets.OSN_SECRET }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.OSN_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.OSN_SECRET }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install R packages
+        run: R -e 'source("install.R")'
+
+      - name: Run backfill
+        run: Rscript ./Generate_forecasts/ARIMA/backfill_jul_nov.R
