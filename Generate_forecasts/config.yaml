@@ -15,12 +15,12 @@ horizon_PT1H: 48
 
 # Theme variables
 theme_vars:
-#  coastal: ["chlora_buoy", "chlora_cci"]
+  coastal: ["chlora_buoy", "chlora_cci"]
   urban: ["NO2_P1H", "O3", "PM2.5_P1D", "PM10_P1D", "PM2.5_P1H", "PM10_P1H"]
 
 # Source modes for each theme
 source_modes:
-#  coastal: ["buoy", "cci", "cci_corrected"]
+  coastal: ["buoy", "cci", "cci_corrected"]
   urban: ["urban"]
 
 # Backfill window
@@ -34,7 +34,7 @@ models:
     health_check_url: "https://hc-ping.com/1088c2cf-3fb1-43da-9ff5-d2574bdac32b"
   tg_temp_lm:
     model_id: "tg_temp_lm"
-    model_themes: ["urban"]
+    model_themes: ["coastal", "urban"]
     health_check_url: "https://hc-ping.com/aa786d5b-f664-4eb9-95de-20df2df928ed"
   tg_xgboost:
     model_id: "tg_XGBoost"
