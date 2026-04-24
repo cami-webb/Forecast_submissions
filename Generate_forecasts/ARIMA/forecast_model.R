@@ -16,7 +16,7 @@ forecast_model <- function(site,
     dplyr::filter(
       site_id == site,
       variable == target_variable,
-      datetime < as.Date(forecast_date)
+      datetime < as.POSIXct(as.Date(forecast_date), tz = "UTC")
     ) |>
     dplyr::mutate(datetime = as.Date(datetime)) |>
     dplyr::filter(!is.na(datetime)) |>
