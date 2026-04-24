@@ -35,9 +35,7 @@ forecast_model <- function(site,
     tidyr::pivot_wider(names_from = "variable", values_from = "observation") |>
     dplyr::left_join(noaa_past_mean %>%
                        filter(site_id == site),
-                     by = c("datetime", "site_id")) |>
-    dplyr::arrange(datetime) |>
-    tidyr::fill(air_temperature, .direction = "down")
+                     by = c("datetime", "site_id")) 
   
   if (!target_variable %in% names(site_target)) {
     message(paste0("No target observations at site ", site, ". Skipping forecasts at this site."))
