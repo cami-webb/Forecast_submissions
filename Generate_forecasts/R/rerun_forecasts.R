@@ -86,6 +86,7 @@ rerun_forecasts <- function(model_id,
     }, error = function(e) {
       cat("ERROR with forecast generation:\n", conditionMessage(e), "\n")
     })
+    gc()
   }
 
   invisible(NULL)
