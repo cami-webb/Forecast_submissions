@@ -1,8 +1,9 @@
 name: LM
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 20 * * *"
+#  schedule:
+#    - cron: "0 20 * * *"
+
 jobs:
   build:
     runs-on: ubuntu-latest
