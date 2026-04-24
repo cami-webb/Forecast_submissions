@@ -11,17 +11,19 @@ aug_nov_dates <- seq.Date(as.Date("2025-08-01"), as.Date("2025-11-30"), by = "da
 
 # July: both themes, all vars (normal)
 for (d in as.character(july_dates)) {
-  message("July: ", d)
+  message("July coastal: ", d)
   tryCatch(
-    generate_tg_forecast(
-      forecast_date  = d,
-      forecast_model = forecast_model,
-      model_themes   = c("coastal", "urban"),
-      model_id       = config$models$tg_arima$model_id,
-      noaa           = FALSE,
-      source_mode    = c("buoy", "cci")
-    ),
-    error = function(e) message("ERROR ", d, ": ", e$message)
+    generate_tg_forecast(forecast_date=d, forecast_model=forecast_model,
+      model_themes="coastal", model_id=config$models$tg_arima$model_id,
+      noaa=FALSE, source_mode=c("buoy","cci")),
+    error = function(e) message("ERROR coastal ", d, ": ", e$message)
+  )
+  message("July urban: ", d)
+  tryCatch(
+    generate_tg_forecast(forecast_date=d, forecast_model=forecast_model,
+      model_themes="urban", model_id=config$models$tg_arima$model_id,
+      noaa=FALSE, source_mode="urban"),
+    error = function(e) message("ERROR urban ", d, ": ", e$message)
   )
 }
 
