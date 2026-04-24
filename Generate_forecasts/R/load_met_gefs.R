@@ -27,18 +27,30 @@ load_met_gefs <- function(sites, forecast_date, config) {
   })
   message("Stage3 met loaded.")
   
-    message("Loading stage2 met data for ", length(sites), " sites...")
+  # Stage 2 = future forecast met
+  message("Loading stage2 met data for ", length(sites), " sites...")
   noaa_future_daily <- tryCatch({
-    ds <- arrow::open_dataset(s3_read$path(paste0(drivers_path, "/stage2"))) |>
-      dplyr::filter(
-        site_id %in% sites,
-        as.Date(datetime) >= as.Date(forecast_date)
-      ) |>
-      dplyr::collect()
     
-    if (nrow(ds) == 0) return(NULL)
+    # Try forecast_date, then walk back up to 30 days to find available stage2 data
+    ds <- NULL
+    attempt_date <- as.Date(forecast_date)
+    for (days_back in 0:30) {
+      attempt_date <- as.Date(forecast_date) - days_back
+      candidate <- arrow::open_dataset(s3_read$path(paste0(drivers_path, "/stage2"))) |>
+        dplyr::filter(
+          site_id %in% sites,
+          as.Date(datetime) >= attempt_date
+        ) |>
+        dplyr::collect()
+      if (nrow(candidate) > 0) {
+        ds <- candidate
+        if (days_back > 0) message("No stage2 data for ", forecast_date, ", using data from ", attempt_date)
+        break
+      }
+    }
     
-    # use most recent reference_datetime
+    if (is.null(ds) || nrow(ds) == 0) return(NULL)
+    
     latest_ref <- max(as.Date(ds$reference_datetime), na.rm = TRUE)
     
     ds |>
@@ -47,6 +59,7 @@ load_met_gefs <- function(sites, forecast_date, config) {
       dplyr::group_by(datetime, site_id, parameter, variable) |>
       dplyr::summarise(prediction = mean(prediction, na.rm = TRUE), .groups = "drop") |>
       tidyr::pivot_wider(names_from = variable, values_from = prediction)
+      
   }, error = function(e) {
     message("Error loading stage2 met: ", conditionMessage(e))
     return(NULL)
