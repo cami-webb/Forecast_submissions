@@ -56,3 +56,20 @@ for (d in as.character(aug_nov_dates)) {
     error = function(e) message("ERROR urban ", d, ": ", e$message)
   )
 }
+
+dec_dates <- seq.Date(as.Date("2025-12-01"), as.Date("2025-12-31"), by = "day")
+
+for (d in as.character(dec_dates)) {
+  message("Dec urban (all vars): ", d)
+  tryCatch(
+    generate_tg_forecast(
+      forecast_date  = d,
+      forecast_model = forecast_model,
+      model_themes   = "urban",
+      model_id       = config$models$tg_arima$model_id,
+      noaa           = FALSE,
+      source_mode    = "urban"
+    ),
+    error = function(e) message("ERROR urban ", d, ": ", e$message)
+  )
+}
