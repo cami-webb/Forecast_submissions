@@ -66,7 +66,7 @@ forecast_model <- function(site,
     freq <- if (is_hourly) 24 else 365
     y_ts <- ts(y, frequency = freq)
   
-  if (sum(y < 0, na.rm = TRUE) > 0) {
+  if (sum(y <= 0, na.rm = TRUE) > 0) {
     # fit <- forecast::auto.arima(y) NOT SEASONAL
     fit <- forecast::auto.arima(y_ts) 
   } else {
