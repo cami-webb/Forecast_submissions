@@ -1,8 +1,8 @@
 name: S-ARIMA
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 14 * * *' # runs at 9am EST
+#  schedule:
+#    - cron: '0 14 * * *' # runs at 9am EST
 
 jobs:
   r-job:
