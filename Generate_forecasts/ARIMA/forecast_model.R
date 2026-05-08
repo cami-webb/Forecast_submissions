@@ -11,32 +11,40 @@ forecast_model <- function(site,
 
   message("Running site: ", site)
 
-  site_target <- target |>
-  dplyr::select(dplyr::any_of(c("datetime", "site_id", "variable", "duration", "observation"))) |>
+  site_target_raw <- target |>
+    dplyr::select(dplyr::any_of(c("datetime", "site_id", "variable", "duration", "observation"))) |>
     dplyr::filter(
       site_id == site,
       variable == target_variable,
       datetime < as.POSIXct(as.Date(forecast_date), tz = "UTC")
-    ) |>
-    dplyr::mutate(datetime = as.Date(datetime)) |>
-    dplyr::filter(!is.na(datetime)) |>
-    dplyr::group_by(datetime) |>
-    dplyr::summarise(observation = mean(observation, na.rm = TRUE), .groups = "drop") |>
-    dplyr::arrange(datetime)
+    )
+  
+  # Detect duration early so we know whether to collapse to daily
+  dur <- site_target_raw |> dplyr::pull(duration)
+  dur <- dur[!is.na(dur) & nzchar(dur)]
+  dur <- if (length(dur) == 0) NA_character_ else dur[1]
+  is_hourly <- identical(dur, "PT1H")
+  
+  if (is_hourly) {
+    site_target <- site_target_raw |>
+      dplyr::mutate(datetime = as.POSIXct(datetime, tz = "UTC")) |>
+      dplyr::filter(!is.na(datetime)) |>
+      dplyr::group_by(datetime) |>
+      dplyr::summarise(observation = mean(observation, na.rm = TRUE), .groups = "drop") |>
+      dplyr::arrange(datetime)
+  } else {
+    site_target <- site_target_raw |>
+      dplyr::mutate(datetime = as.Date(datetime)) |>
+      dplyr::filter(!is.na(datetime)) |>
+      dplyr::group_by(datetime) |>
+      dplyr::summarise(observation = mean(observation, na.rm = TRUE), .groups = "drop") |>
+      dplyr::arrange(datetime)
+  }
 
   if (nrow(site_target) == 0 || all(is.na(site_target$observation))) {
       message("No target observations at site ", site, " for ", target_variable, "; skipping.")
       return(NULL)
     }
-  
-    # Pull duration from target before summarise drops it
-    dur <- target |>
-      dplyr::filter(site_id == site, variable == target_variable) |>
-      dplyr::pull(duration)
-    dur <- dur[!is.na(dur) & nzchar(dur)]
-    dur <- if (length(dur) == 0) NA_character_ else dur[1]
-    
-    is_hourly <- identical(dur, "PT1H")
     
     # Build a regular time grid
     if (is_hourly) {
