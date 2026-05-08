@@ -16,7 +16,8 @@ forecast_model <- function(site,
     dplyr::filter(
       site_id == site,
       variable == target_variable,
-      datetime < as.POSIXct(as.Date(forecast_date), tz = "UTC")
+      datetime < as.POSIXct(as.Date(forecast_date), tz = "UTC"),
+      datetime >= as.POSIXct(as.Date(forecast_date) - 365*3, tz = "UTC")
     )
   
   # Detect duration early so we know whether to collapse to daily
