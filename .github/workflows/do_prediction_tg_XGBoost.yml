@@ -2,8 +2,8 @@ name: XGBoost
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 20 * * *"
+ # schedule:
+  #  - cron: "0 20 * * *"
 jobs:
   build:
     runs-on: ubuntu-22.04
