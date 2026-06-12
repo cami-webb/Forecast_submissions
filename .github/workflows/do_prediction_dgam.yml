@@ -1,11 +1,12 @@
-name: LM
+name: Dynamic GAM
+
 on:
   workflow_dispatch:
-#  schedule:
-#    - cron: "0 20 * * *"
+  schedule:
+    - cron: "0 22 * * *"
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
       image: eco4cast/rocker-neon4cast
     env:
@@ -20,7 +21,7 @@ jobs:
           fetch-depth: 0
       - name: Install R packages
         run: R -e 'source("install.R")'
-      - name: Run automatic prediction file (temp_lm)
-        run: Rscript ./Generate_forecasts/temp_lm/run_forecast.R
+      - name: Run automatic prediction file (tg_dgam)
+        run: Rscript ./Generate_forecasts/tg_dgam/run_forecast.R
       - name: Back fill forecasts
-        run: Rscript ./Generate_forecasts/temp_lm/rerun_forecasts.R
+        run: Rscript ./Generate_forecasts/tg_dgam/rerun_forecasts.R

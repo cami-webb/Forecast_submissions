@@ -1,31 +1,27 @@
-# Random forest model - mtry and min_n parameters tuned on all target historical data (date of tuning on file name in tg_randfor/trained_models/) and final fit to forecast 
-# Trained entirely on available meteorological observations at each site
+# Random forest forecast model for bu4cast coastal and urban sites.
+# Trains on historical met (stage3 daily means) + target observations each run.
+# Tunes mtry and min.node.size via ranger's free OOB error (no separate CV loop).
+# Predicts on each GEFS stage2 ensemble member; PT1H vars get hourly expansion.
+#
+# Requires ranger — install once if not present:
+#   install.packages("ranger", lib = "/projectnb/dietzelab/cwebb16/x86_64-pc-linux-gnu-library/4.5/")
 
-
-#### Step 0: load packages
-library(here)
 library(tidyverse)
-library(tidymodels)
-library(neon4cast)
 library(lubridate)
-library(glue)
-library(decor)
-library(tsibble)
-library(fable)
 library(arrow)
-library(bundle)
 library(ranger)
-here::i_am("Forecast_submissions/Generate_forecasts/tg_randfor/forecast_model.R")
-source(here("Forecast_submissions/download_target.R"))
-source(here("Forecast_submissions/ignore_sigpipe.R"))  #might fail locally, but necessary for git actions to exit properly or something
-source("./Generate_forecasts/R/load_met.R")
+library(yaml)
+
+source("./Generate_forecasts/R/load_met_gefs.R")
 source("./Generate_forecasts/R/generate_tg_forecast.R")
 source("./Generate_forecasts/R/run_all_vars.R")
 
-model_themes = c("terrestrial_daily","aquatics","phenology","beetles","ticks") #By default, run model across all themes, except terrestrial 30min (not currently configured)
-model_id = "tg_randfor"
-
-
+MET_VARS <- c(
+  "air_temperature", "air_pressure", "precipitation_flux",
+  "relative_humidity", "surface_downwelling_shortwave_flux_in_air",
+  "eastward_wind", "northward_wind",
+  "surface_downwelling_longwave_flux_in_air"
+)
 
 forecast_model <- function(site,
                            noaa_past_mean,
@@ -35,69 +31,143 @@ forecast_model <- function(site,
                            horiz,
                            step,
                            theme,
-                           forecast_date) {
-  
-  message(paste0("Running site: ", site))
-  
-  variables <- c('air_temperature',
-                 "surface_downwelling_longwave_flux_in_air",
-                 "surface_downwelling_shortwave_flux_in_air",
-                 "precipitation_flux",
-                 "air_pressure",
-                 "relative_humidity",
-                 "air_temperature",
-                 "northward_wind",
-                 "eastward_wind")
-  
-  # Merge in past NOAA data into the targets file, matching by date.
+                           forecast_date,
+                           model_id) {
+
+  message("Running site: ", site)
+
+  # PT1H variables (horiz = 48) require daily aggregation for training
+  is_hourly <- horiz > 30
+
+  if (is.null(noaa_future_daily)) {
+    message("No future met data available for ", forecast_date, ". Skipping site ", site, ".")
+    return(NULL)
+  }
+  if (is.null(noaa_past_mean)) {
+    message("No historical met data available. Skipping site ", site, ".")
+    return(NULL)
+  }
+
+  # Subset target to this site/variable; aggregate to daily to match met
   site_target <- target |>
     dplyr::select(datetime, site_id, variable, observation) |>
-    dplyr::filter(variable %in% c(target_variable), 
-                  site_id == site,
-                  datetime < forecast_date) |>
-    tidyr::pivot_wider(names_from = "variable", values_from = "observation") |>
-    dplyr::left_join(noaa_past_mean%>%
-                       filter(site_id == site), 
-                     by = c("datetime", "site_id"))
-  
-  
-  #  Get 30-day predicted NOAA ensemble at the site
-  noaa_future <- noaa_future_daily%>%
-    filter(site_id == site)|>
-    drop_na() #dropping NAs necessary for ranger package random forest models to run - just in case
-  
-  # Call saved model fits
-  mod_file <- list.files(here("Forecast_submissions/Generate_forecasts/tg_randfor/trained_models/"), pattern = paste(theme, site, target_variable, sep = "-"))
-  
-  if(!file_test("-f", here(paste0("Forecast_submissions/Generate_forecasts/tg_randfor/trained_models/",mod_file)))){
-    message(paste0("No trained model for site ",site,". Skipping forecasts at this site."))
-    return()
-    
-  } else {
-    
-  mod_fit <- readRDS(here(paste0("Forecast_submissions/Generate_forecasts/tg_randfor/trained_models/",mod_file)))
-  
- # forecast step
-  predictions <- predict(unbundle(mod_fit),
-                         new_data = noaa_future)|>
-    rename(prediction = ".pred")
-  
-  forecast <- noaa_future %>% 
-    #select(datetime, parameter, all_of(variables)) %>% 
-    bind_cols(predictions) |> 
-    mutate(site_id = site,
-           variable = target_variable)
+    dplyr::mutate(site_id = as.character(site_id)) |>
+    dplyr::filter(variable == target_variable,
+                  site_id  == as.character(site),
+                  datetime  < forecast_date) |>
+    dplyr::mutate(datetime    = as.Date(datetime),
+                  observation = suppressWarnings(as.numeric(observation))) |>
+    dplyr::group_by(datetime, site_id, variable) |>
+    dplyr::summarise(observation = mean(observation, na.rm = TRUE), .groups = "drop") |>
+    tidyr::pivot_wider(names_from = "variable", values_from = "observation")
 
+  site_target <- site_target |>
+    dplyr::left_join(
+      noaa_past_mean |> dplyr::filter(site_id == site),
+      by = c("datetime", "site_id")
+    )
 
-    # Format results to EFI standard
-    forecast <- forecast |>
-      mutate(reference_datetime = forecast_date,
-             family = "ensemble",
-             model_id = model_id) |> 
-      select(model_id, datetime, reference_datetime,
-             site_id, family, parameter, variable, prediction)
+  if (!target_variable %in% names(site_target)) {
+    message("No target observations at site ", site, ". Skipping.")
+    return(NULL)
   }
+
+  if (sum(!is.na(site_target$air_temperature) &
+          !is.na(site_target[[target_variable]])) == 0) {
+    message("No overlapping air_temperature + target at site ", site, ". Skipping.")
+    return(NULL)
+  }
+
+  available_met <- MET_VARS[MET_VARS %in% names(site_target)]
+  train_data <- site_target |>
+    dplyr::select(dplyr::all_of(c(target_variable, available_met))) |>
+    tidyr::drop_na()
+
+  if (nrow(train_data) < 10) {
+    message("Only ", nrow(train_data), " complete rows at site ", site, ". Skipping.")
+    return(NULL)
+  }
+
+  # ---- Tune mtry and min.node.size via OOB error ----
+  p          <- length(available_met)
+  mtry_grid  <- unique(pmax(1L, c(floor(sqrt(p)), floor(p / 3L), floor(p / 2L))))
+  min_n_grid <- c(5L, 10L, 20L)
+  rf_formula <- as.formula(paste(target_variable, "~ ."))
+
+  best_oob   <- Inf
+  best_mtry  <- mtry_grid[1]
+  best_min_n <- min_n_grid[1]
+
+  for (m in mtry_grid) {
+    for (mn in min_n_grid) {
+      rf_tune <- ranger::ranger(
+        formula       = rf_formula,
+        data          = train_data,
+        num.trees     = 200,
+        mtry          = m,
+        min.node.size = mn
+      )
+      if (rf_tune$prediction.error < best_oob) {
+        best_oob   <- rf_tune$prediction.error
+        best_mtry  <- m
+        best_min_n <- mn
+      }
+    }
+  }
+  message("  tuned: mtry=", best_mtry, " min.node.size=", best_min_n,
+          " OOB_MSE=", round(best_oob, 4), " n_train=", nrow(train_data))
+
+  # ---- Fit final model ----
+  rf_fit <- ranger::ranger(
+    formula       = rf_formula,
+    data          = train_data,
+    num.trees     = 500,
+    mtry          = best_mtry,
+    min.node.size = best_min_n
+  )
+
+  # ---- Build future met frame (daily), then expand to hourly if needed ----
+  noaa_future <- noaa_future_daily |>
+    dplyr::filter(site_id == site) |>
+    dplyr::select(dplyr::any_of(c("datetime", "parameter", available_met))) |>
+    tidyr::drop_na()
+
+  if (nrow(noaa_future) == 0) {
+    message("No future met data at site ", site, ". Skipping.")
+    return(NULL)
+  }
+
+  if (is_hourly) {
+    noaa_future <- noaa_future |>
+      dplyr::mutate(datetime = as.Date(datetime)) |>
+      dplyr::group_by(datetime, parameter) |>
+      dplyr::reframe(
+        dplyr::across(dplyr::all_of(available_met)),
+        hour = 0:23
+      ) |>
+      dplyr::mutate(
+        datetime = as.POSIXct(datetime, tz = "UTC") + lubridate::hours(hour)
+      ) |>
+      dplyr::select(-hour) |>
+      dplyr::filter(
+        datetime >= as.POSIXct(forecast_date, tz = "UTC"),
+        datetime <  as.POSIXct(forecast_date, tz = "UTC") + lubridate::hours(horiz)
+      )
+  }
+
+  # ---- Predict on each ensemble member ----
+  pred_input  <- noaa_future |> dplyr::select(dplyr::all_of(available_met))
+  predictions <- pmax(0, predict(rf_fit, data = pred_input)$predictions)
+
+  noaa_future |>
+    dplyr::mutate(
+      site_id            = site,
+      prediction         = predictions,
+      variable           = target_variable,
+      reference_datetime = forecast_date,
+      family             = "ensemble",
+      model_id           = model_id
+    ) |>
+    dplyr::select(model_id, datetime, reference_datetime,
+                  site_id, family, parameter, variable, prediction)
 }
-
-
-

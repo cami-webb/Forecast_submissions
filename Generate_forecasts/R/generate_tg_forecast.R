@@ -1,3 +1,70 @@
+# Map model_id to local SCC subfolder name
+model_local_folder <- function(model_id) {
+  if (grepl("lm_scale", model_id, ignore.case = TRUE)) return("LM_scale")
+  if (grepl("lm_all",  model_id, ignore.case = TRUE)) return("LM_all")
+  if (grepl("_lm",     model_id, ignore.case = TRUE)) return("LM")
+  if (grepl("XGBoost", model_id, ignore.case = TRUE)) return("XGBoost")
+  if (grepl("randfor", model_id, ignore.case = TRUE)) return("RF")
+  if (grepl("dgam",    model_id, ignore.case = TRUE)) return("dGAM")
+  if (grepl("arima",   model_id, ignore.case = TRUE)) return("ARIMA")
+  return(model_id)
+}
+
+# Write forecast CSV locally; then upload the earliest local file to S3 /submissions
+# if no file for this thrust+model exists in either /submissions or /raw-submissions.
+write_local_upload <- function(forecast_out, theme, forecast_date, model_id, config) {
+  local_dir <- file.path(config$local_forecasts_dir, model_local_folder(model_id))
+  dir.create(local_dir, recursive = TRUE, showWarnings = FALSE)
+
+  fname      <- paste0(theme, "-", forecast_date, "-", model_id, ".csv")
+  local_path <- file.path(local_dir, fname)
+  readr::write_csv(forecast_out, local_path)
+  message("Wrote forecast to SCC: ", local_path)
+
+  # Check S3 for existing file for this thrust+model
+  tryCatch({
+    Sys.setenv(AWS_ACCESS_KEY_ID     = Sys.getenv("OSN_KEY"),
+               AWS_SECRET_ACCESS_KEY = Sys.getenv("OSN_SECRET"),
+               AWS_S3_FORCE_PATH_STYLE = "true")
+    ep      <- gsub("https://", "", config$endpoint)
+    bucket  <- config$s3_bucket_write
+    pattern <- paste0("^", theme, ".*", model_id)
+
+    sub_keys <- tryCatch(
+      aws.s3::get_bucket_df(bucket = bucket, base_url = ep, region = "",
+                            prefix = paste0(config$forecasts_path, "/"), max = Inf)$Key,
+      error = function(e) character(0)
+    )
+    raw_keys <- tryCatch(
+      aws.s3::get_bucket_df(bucket = bucket, base_url = ep, region = "",
+                            prefix = gsub("/submissions", "/raw-submissions", config$forecasts_path),
+                            max = Inf)$Key,
+      error = function(e) character(0)
+    )
+
+    already_exists <- any(grepl(pattern, basename(c(sub_keys, raw_keys))))
+
+    if (already_exists) {
+      message("S3 already has a file for ", theme, "/", model_id, " — skipping upload.")
+    } else {
+      # Upload earliest local file for this thrust+model
+      all_local <- list.files(local_dir, pattern = paste0("^", theme, ".*", model_id, "\\.csv$"),
+                              full.names = TRUE)
+      if (length(all_local) == 0) {
+        message("No local files found to upload for ", theme, "/", model_id)
+      } else {
+        earliest  <- sort(all_local)[1]
+        s3_key    <- paste0(config$forecasts_path, "/", basename(earliest))
+        aws.s3::put_object(file = earliest, object = s3_key, bucket = bucket,
+                           base_url = ep, region = "")
+        message("Uploaded to S3 /submissions: ", basename(earliest))
+      }
+    }
+  }, error = function(e) {
+    message("S3 check/upload failed: ", e$message)
+  })
+}
+
 generate_tg_forecast <- function(forecast_date,
                                  forecast_model,
                                  model_themes = "coastal",
@@ -42,6 +109,10 @@ if (isTRUE(noaa)) {
     )
     noaa_past_mean    <- met$noaa_past_mean
     noaa_future_daily <- met$noaa_future_daily
+    if (is.null(noaa_future_daily)) {
+      message("No future met data available for ", forecast_date, " — skipping.")
+      return(invisible(NULL))
+    }
   } else {
     noaa_future_daily <- NULL
     noaa_past_mean    <- NULL
@@ -64,7 +135,8 @@ if (isTRUE(noaa)) {
         as.POSIXct(datetime, tz = "UTC")
       } else {
         as.POSIXct(lubridate::ymd(datetime), tz = "UTC")
-      }
+      },
+      site_id = as.character(site_id)
     ) |>
     dplyr::select(dplyr::any_of(c("datetime", "site_id", "variable", "duration", "observation")))
 
@@ -86,7 +158,8 @@ if (isTRUE(noaa)) {
             as.POSIXct(datetime, tz = "UTC")
           } else {
             as.POSIXct(lubridate::ymd(datetime), tz = "UTC")
-          }
+          },
+          site_id = as.character(site_id)
         ) |>
         dplyr::select(dplyr::any_of(c("datetime", "site_id", "variable", "duration", "observation")))
       if (!"duration" %in% names(corrected_target)) corrected_target$duration <- NA_character_
@@ -124,10 +197,19 @@ if (isTRUE(noaa)) {
     vars <- theme_default_vars(theme)
 
     if (identical(theme, "coastal")) {
-      
+
+      # Restrict to config$sites$coastal whitelist if provided; otherwise use all target sites
+      coastal_site_whitelist <- config$sites$coastal
+
       buoy_sites           <- unique(target$site_id[target$variable == "chlora_buoy"])
       cci_sites            <- unique(target$site_id[target$variable == "chlora_cci"])
       cci_corrected_sites  <- unique(target$site_id[target$variable == "chlora_cci_corrected"])
+
+      if (!is.null(coastal_site_whitelist) && length(coastal_site_whitelist) > 0) {
+        buoy_sites          <- intersect(buoy_sites,          coastal_site_whitelist)
+        cci_sites           <- intersect(cci_sites,           coastal_site_whitelist)
+        cci_corrected_sites <- intersect(cci_corrected_sites, coastal_site_whitelist)
+      }
       
       mode_var_sites <- list(
         chlora_buoy          = list(sites = buoy_sites,          var = "chlora_buoy"),
@@ -176,24 +258,18 @@ if (isTRUE(noaa)) {
         dplyr::mutate(
           reference_datetime = as.Date(reference_datetime),
           depth              = 1,
-          family             = as.character("normal"),
+          family             = as.character(family),
           parameter          = as.character(parameter),
           obs_flag           = 0L,
           variable           = as.character(variable),
           prediction         = as.numeric(prediction)
         ) |>
         dplyr::select(
-          reference_datetime, datetime, depth, family,
+          reference_datetime, datetime, site_id, depth, family,
           parameter, obs_flag, variable, prediction
         )
 
-      forecast_key <- paste0(
-        config$forecasts_path, "/",
-        theme, "-", forecast_date, "-", model_id, ".csv"
-      )
-
-      arrow::write_csv_arrow(forecast_out, sink = s3_write$path(forecast_key))
-      message("Wrote forecast to S3: ", forecast_key)
+      write_local_upload(forecast_out, theme, forecast_date, model_id, config)
 
     } else if (identical(theme, "urban")) {
 
@@ -229,7 +305,7 @@ if (isTRUE(noaa)) {
         dplyr::mutate(
           reference_datetime = as.Date(reference_datetime),
           depth              = 1,
-          family             = as.character("normal"),
+          family             = as.character(family),
           parameter          = as.character(parameter),
           obs_flag           = 0L,
           variable           = as.character(variable),
@@ -240,13 +316,7 @@ if (isTRUE(noaa)) {
           parameter, obs_flag, variable, prediction
         )
 
-      forecast_key <- paste0(
-        config$forecasts_path, "/",
-        theme, "-", forecast_date, "-", model_id, ".csv"
-      )
-
-      arrow::write_csv_arrow(forecast_out, sink = s3_write$path(forecast_key))
-      message("Wrote forecast to S3: ", forecast_key)
+      write_local_upload(forecast_out, theme, forecast_date, model_id, config)
 
     } else {
       stop("Unknown theme: ", theme)

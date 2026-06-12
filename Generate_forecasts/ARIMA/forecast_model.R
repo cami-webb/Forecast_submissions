@@ -11,6 +11,7 @@ forecast_model <- function(site,
 
   message("Running site: ", site)
 
+  # Wide initial pull — we'll trim to the right lookback once we know the duration
   site_target_raw <- target |>
     dplyr::select(dplyr::any_of(c("datetime", "site_id", "variable", "duration", "observation"))) |>
     dplyr::filter(
@@ -19,12 +20,21 @@ forecast_model <- function(site,
       datetime < as.POSIXct(as.Date(forecast_date), tz = "UTC"),
       datetime >= as.POSIXct(as.Date(forecast_date) - 365*3, tz = "UTC")
     )
-  
+
   # Detect duration early so we know whether to collapse to daily
   dur <- site_target_raw |> dplyr::pull(duration)
   dur <- dur[!is.na(dur) & nzchar(dur)]
   dur <- if (length(dur) == 0) NA_character_ else dur[1]
   is_hourly <- identical(dur, "PT1H")
+
+  # Trim to appropriate lookback window:
+  #   hourly → 90 days  (keeps series short enough for auto.arima to be fast)
+  #   daily  → 365 days (one full seasonal cycle)
+  lookback_days <- if (is_hourly) 90L else 365L
+  site_target_raw <- site_target_raw |>
+    dplyr::filter(
+      datetime >= as.POSIXct(as.Date(forecast_date) - lookback_days, tz = "UTC")
+    )
   
   if (is_hourly) {
     site_target <- site_target_raw |>
@@ -111,7 +121,7 @@ forecast_model <- function(site,
     site_id = site,
     family = "normal",
     variable = target_variable,
-    mu = as.numeric(fc$`Point Forecast`),
+    mu = pmax(0, as.numeric(fc$`Point Forecast`)),
     sigma = as.numeric(fc$sigma),
     model_id = model_id
   ) |>

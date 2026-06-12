@@ -1,29 +1,30 @@
+name: Random Forest
+
 on:
   workflow_dispatch:
   schedule:
-  - cron: "0 20 * * *"
-#  push:
-
+    - cron: "0 20 * * *"
 
 jobs:
   build:
     runs-on: ubuntu-22.04
     container:
       image: eco4cast/rocker-neon4cast
+    env:
+      OSN_KEY: ${{ secrets.OSN_KEY }}
+      OSN_SECRET: ${{ secrets.OSN_SECRET }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.OSN_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.OSN_SECRET }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: install R packages
+      - name: Install R packages
         run: R -e 'source("install.R")'
-      - name: install extra R packages
-        run: R -e 'install.packages(c("tidymodels", "bundle", "ranger"))'
-# Point to the right path, run the right Rscript command
-      - name: Run automatic prediction file (random forest)
+      - name: Install extra R packages
+        run: R -e 'install.packages("ranger")'
+      - name: Run automatic prediction file (tg_randfor)
         run: Rscript ./Generate_forecasts/tg_randfor/run_forecast.R
-      - name: Run automatic prediction file (random forest all sites)
-        run: Rscript ./Generate_forecasts/tg_randfor_all_sites/run_forecast.R
-
-
-
+      - name: Back fill forecasts
+        run: Rscript ./Generate_forecasts/tg_randfor/rerun_forecasts.R

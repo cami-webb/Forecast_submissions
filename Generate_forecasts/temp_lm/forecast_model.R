@@ -55,7 +55,7 @@ forecast_model <- function(site,
     # use the linear model to forecast target variable for each ensemble member
     forecast <- noaa_future |>
       mutate(site_id = site,
-             prediction = predict(fit, tibble(air_temperature)),
+             prediction = pmax(0, predict(fit, tibble(air_temperature))),
              variable = target_variable)
 
     # Format results to EFI standard

@@ -1,3 +1,8 @@
+# Site lists - add new sites here; null means "use all sites found in targets"
+sites:
+  coastal: ["1"]
+  urban: null
+
 # S3 connection
 s3_bucket_read: "bu4cast-ci-read"
 s3_bucket_write: "bu4cast-ci-write"
@@ -7,7 +12,8 @@ project_id: "bu4cast"
 # Paths
 targets_path: "challenges/project_id=bu4cast/targets"
 targets_corrected_path: "challenges/project_id=bu4cast/targets/coastal-targets-corrected.csv"
-forecasts_path: "challenges/project_id=bu4cast/forecasts"
+forecasts_path: "challenges/project_id=bu4cast/submissions"
+local_forecasts_dir: "/projectnb/dietzelab/cwebb16/FRP/Forecasts"
 
 # Forecast horizons
 horizon_P1D: 30
@@ -24,20 +30,47 @@ source_modes:
   urban: ["urban"]
 
 # Backfill window
-backfill_days: 310
+backfill_days: 320
+backfill_start: "2025-07-01"
 
 # Models
 models:
   tg_arima:
     model_id: "tg_arima"
     model_themes: ["coastal", "urban"]
-    health_check_url: "https://hc-ping.com/1088c2cf-3fb1-43da-9ff5-d2574bdac32b"
   tg_temp_lm:
     model_id: "tg_temp_lm"
     model_themes: ["coastal", "urban"]
-    health_check_url: "https://hc-ping.com/aa786d5b-f664-4eb9-95de-20df2df928ed"
   tg_xgboost:
     model_id: "tg_XGBoost"
     model_themes: ["coastal", "urban"]
-    health_check_url: "https://hc-ping.com/79fe71bb-ce0c-4272-afbd-dfc9ba70fe62"
-
+  tg_dgam:
+    model_id: "tg_dgam"
+    model_themes: ["coastal", "urban"]
+  tg_randfor:
+    model_id: "tg_randfor"
+    model_themes: ["coastal", "urban"]
+  tg_lm_all:
+    model_id: "tg_lm_all"
+    model_themes: ["coastal", "urban"]
+  tg_lm_scale:
+    model_id: "tg_lm_scale"
+    model_themes: ["coastal", "urban"]
+  tg_dlwrf_lm:
+    model_id: "tg_dlwrf_lm"
+    model_themes: ["coastal", "urban"]
+  tg_dswrf_lm:
+    model_id: "tg_dswrf_lm"
+    model_themes: ["coastal", "urban"]
+  tg_ugrd_lm:
+    model_id: "tg_ugrd_lm"
+    model_themes: ["coastal", "urban"]
+  tg_vgrd_lm:
+    model_id: "tg_vgrd_lm"
+    model_themes: ["coastal", "urban"]
+  tg_wspd_lm:
+    model_id: "tg_wspd_lm"
+    model_themes: ["coastal", "urban"]
+  tg_humidity_lm:
+    model_id: "tg_humidity_lm"
+    model_themes: ["coastal", "urban"]

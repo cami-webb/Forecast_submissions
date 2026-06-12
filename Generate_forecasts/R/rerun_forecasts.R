@@ -6,7 +6,10 @@ rerun_forecasts <- function(model_id,
                             noaa = FALSE,
                             all_sites = FALSE,
                             source_modes = c("buoy", "cci"),
-                            nowcast_only = FALSE) {
+                            nowcast_only = FALSE,
+                            local_dir  = NULL,   # if set, check local SCC dir instead of S3
+                            date_start = NULL,   # if set, restrict backfill to dates >= this
+                            date_end   = NULL) { # if set, restrict backfill to dates <= this
 
   config <- yaml::read_yaml("Generate_forecasts/config.yaml")
 
@@ -18,17 +21,32 @@ rerun_forecasts <- function(model_id,
   }
   Sys.setenv("AWS_S3_FORCE_PATH_STYLE" = "true")
 
-  submissions <- aws.s3::get_bucket_df(
-    bucket   = config$s3_bucket_write,
-    prefix   = paste0(config$forecasts_path, "/"),
-    base_url = gsub("https://", "", config$endpoint),
-    region   = "",
-    max      = Inf
-  )
+  # Only query S3 if not using local directory check
+  if (is.null(local_dir)) {
+    submissions <- aws.s3::get_bucket_df(
+      bucket   = config$s3_bucket_write,
+      prefix   = paste0(config$forecasts_path, "/"),
+      base_url = gsub("https://", "", config$endpoint),
+      region   = "",
+      max      = Inf
+    )
+  } else {
+    submissions <- NULL
+  }
 
   end_date   <- lubridate::as_date(Sys.Date() - lubridate::days(2))
-  start_date <- end_date - lubridate::days(config$backfill_days)
+  start_date <- if (!is.null(config$backfill_start)) {
+    lubridate::as_date(config$backfill_start)
+  } else {
+    end_date - lubridate::days(config$backfill_days)
+  }
   this_year  <- data.frame(date = seq.Date(start_date, end_date, by = "day"))
+
+  # Restrict to requested date range if provided
+  if (!is.null(date_start))
+    this_year <- this_year[this_year$date >= lubridate::as_date(date_start), , drop = FALSE]
+  if (!is.null(date_end))
+    this_year <- this_year[this_year$date <= lubridate::as_date(date_end), , drop = FALSE]
 
   model_themes <- as.character(model_themes)
   source_modes <- as.character(source_modes)
@@ -40,9 +58,11 @@ rerun_forecasts <- function(model_id,
     for (i in seq_len(nrow(this_year))) {
       date_str       <- lubridate::as_date(this_year$date[i])
       expected_file  <- paste0(theme, "-", date_str, "-", model_id, ".csv")
-      this_year[[colname]][i] <- nrow(
-        dplyr::filter(submissions, stringr::str_detect(Key, stringr::fixed(expected_file)))
-      ) > 0
+      this_year[[colname]][i] <- if (!is.null(local_dir)) {
+        file.exists(file.path(local_dir, expected_file))
+      } else {
+        nrow(dplyr::filter(submissions, stringr::str_detect(Key, stringr::fixed(expected_file)))) > 0
+      }
     }
   }
 
@@ -78,7 +98,7 @@ rerun_forecasts <- function(model_id,
           model_themes   = forecast_themes,
           model_id       = model_id,
           all_sites      = all_sites,
-          noaa           = FALSE,
+          noaa           = noaa,
           source_mode    = source_modes,
           nowcast_only   = nowcast_only
             )

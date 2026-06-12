@@ -25,5 +25,3 @@ jobs:
         run: Rscript ./Generate_forecasts/tg_XGBoost/run_forecast.R
       - name: Back fill forecasts
         run: Rscript ./Generate_forecasts/tg_XGBoost/rerun_forecasts.R
-      - name: Health check
-        run: Rscript -e "config <- yaml::read_yaml('Generate_forecasts/config.yaml'); RCurl::getURL(config\$models\$tg_xgboost\$health_check_url)"
